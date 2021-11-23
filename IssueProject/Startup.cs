@@ -27,7 +27,7 @@ namespace IssueProject
         {
             var emailConfig = Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
             services.AddSingleton(emailConfig);
-            services.AddScoped<IEmailSender, EmailSender>();
+            services.AddScoped<IEmailSender, EmailSender>(); 
 
             services.Configure<FormOptions>(o =>
             {
