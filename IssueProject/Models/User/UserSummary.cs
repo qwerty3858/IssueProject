@@ -7,6 +7,7 @@ namespace IssueProject.Models.User
 {
     public class UserSummary
     {
+        public int Id { get; set; }
         public string DepartmentName { get; set; }
         public string RoleName { get; set; }
         public string FullName { get; set; }

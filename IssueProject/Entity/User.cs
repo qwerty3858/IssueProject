@@ -17,6 +17,8 @@ namespace IssueProject.Entity
         public byte RoleId { get; set; }
         public string FullName { get; set; }
         public string Password { get; set; }
+        public byte[] PasswordHash { get; set; }
+        public byte[] PasswordSalt { get; set; }
         public string EmailAddress { get; set; }
         public bool Deleted { get; set; }
 

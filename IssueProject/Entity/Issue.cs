@@ -1,4 +1,4 @@
-﻿using System;
+﻿using IssueProject.Enums.Issue;
 using System.Collections.Generic;
 
 #nullable disable
@@ -28,7 +28,7 @@ namespace IssueProject.Entity
         public string Subtitle { get; set; }
         public string Summary { get; set; }
         public string Keywords { get; set; }
-        public byte Status { get; set; }
+        public Status Status { get; set; }
         public bool Deleted { get; set; }
 
         public virtual Department Department { get; set; }
@@ -41,4 +41,6 @@ namespace IssueProject.Entity
         public virtual ICollection<IssueRelevantDepartmant> IssueRelevantDepartmants { get; set; }
         public virtual ICollection<IssueRole> IssueRoles { get; set; }
     }
+
+    
 }

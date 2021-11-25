@@ -4,12 +4,11 @@ using System.Collections.Generic;
 
 #nullable disable
 
-namespace IssueProject.Entity
+namespace IssueProject.Models.IssueComfirm
 {
-    public partial class IssueConfirm
+    public partial class IssueConfirmInfo
     {
-        public int Id { get; set; }
-        public int IssueId { get; set; }
+        
         public byte VersionNo { get; set; }
         public int DepartmentId { get; set; }
         public int UserId { get; set; }
@@ -19,11 +18,5 @@ namespace IssueProject.Entity
         public DateTime? MailTime { get; set; }
         public DateTime? SubmitTime { get; set; }
 
-        public virtual Issue Issue { get; set; }
-        
-        
     }
-    
-
-
 }

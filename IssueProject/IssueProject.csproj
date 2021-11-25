@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.12" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.12" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.12">
@@ -17,6 +18,7 @@
     <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
     <PackageReference Include="Serilog.Settings.Configuration" Version="3.3.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="4.0.1" />
     <PackageReference Include="Serilog.Sinks.MSSqlServer" Version="5.6.1" />
     <PackageReference Include="Serilog.Sinks.Seq" Version="5.1.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
@@ -24,18 +26,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EmailService\EmailService.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Models\IssueActivityDetail\" />
-    <Folder Include="Models\IssueAttachment\" />
-    <Folder Include="Models\IssueConfirm\" />
-    <Folder Include="Models\IssueNote\" />
-    <Folder Include="Models\IssuePrecondition\" />
-    <Folder Include="Models\IssueRelevantDepartmant\" />
-    <Folder Include="Models\IssueRole\" />
-    <Folder Include="Models\IssueActivity\" />
-    <Folder Include="Models\Issue\" />
   </ItemGroup>
 
 </Project>

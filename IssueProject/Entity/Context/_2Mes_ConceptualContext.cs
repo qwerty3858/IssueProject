@@ -29,6 +29,7 @@ namespace IssueProject.Entity.Context
         public virtual DbSet<IssueRole> IssueRoles { get; set; }
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<User> Users { get; set; }
+        public virtual DbSet<UserToken> UserTokens { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -42,8 +43,6 @@ namespace IssueProject.Entity.Context
             modelBuilder.Entity<Department>(entity =>
             {
                 entity.ToTable("Department");
-
-                entity.Property(e => e.Id).ValueGeneratedNever();
 
                 entity.Property(e => e.Definition)
                     .HasMaxLength(50)
@@ -257,7 +256,7 @@ namespace IssueProject.Entity.Context
             {
                 entity.ToTable("IssueRole");
 
-                entity.Property(e => e.Id).ValueGeneratedNever();
+                entity.Property(e => e.Id);
 
                 entity.HasOne(d => d.Issue)
                     .WithMany(p => p.IssueRoles)
@@ -288,9 +287,7 @@ namespace IssueProject.Entity.Context
             {
                 entity.ToTable("User");
 
-                entity.Property(e => e.Id)
-                    .ValueGeneratedNever()
-                    .HasComment("Kullanıcı Sicil No");
+                entity.Property(e => e.Id).HasComment("Kullanıcı Sicil No");
 
                 entity.Property(e => e.DepartmentId).HasComment("Departman");
 
@@ -324,7 +321,23 @@ namespace IssueProject.Entity.Context
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Role_User_");
             });
+            modelBuilder.Entity<UserToken>(entity =>
+            {
+                
+                entity.ToTable("UserToken");
 
+                entity.Property(e => e.Id).HasMaxLength(100);
+
+                entity.Property(e => e.ClientId).HasMaxLength(50);
+
+                entity.Property(e => e.ExpiresUtc).HasColumnType("datetime");
+
+                entity.Property(e => e.IssuedUtc).HasColumnType("datetime");
+
+                 
+
+                entity.Property(e => e.Subject).HasMaxLength(50);
+            });
             OnModelCreatingPartial(modelBuilder);
         }
 

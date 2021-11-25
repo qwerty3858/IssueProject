@@ -17,6 +17,7 @@ namespace IssueProject.Entity
         public byte Type { get; set; }
         public short SubActivityNo { get; set; }
         public string SubActivityTitle { get; set; }
+        public int ParentId { get; set; }
 
         public virtual Issue Issue { get; set; }
         public virtual ICollection<IssueActivitiyDetail> IssueActivitiyDetails { get; set; }

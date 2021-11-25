@@ -22,7 +22,14 @@ namespace IssueProject.Controllers
         [HttpGet]
         public async Task MailMessage()
         {
-            var message = new Message(new string[] { "poyraz.celal97@gmail.com" }, "Test email async", "This is the content from our async email.", null);
+            string myvar = "<table width = '100%' cellspacing = '0' cellpadding = '0' ><tr> <td>";
+            myvar += "<table cellspacing = '0' cellpadding = '0'><tr><td style = 'border-radius: 2px; ' bgcolor = '#ED2939'>";
+            myvar += $"<a href =\" http://localhost:8080/Viewer/1\"";
+            myvar += " target = '_blank'";
+            myvar += "style = 'padding: 8px 12px; border: 1px solid #ED2939; border-radius: 2px; font-family: Helvetica, Arial, sans-serif;font-size: 14px; color: #FFFFFF; text-decoration: none;font-weight:bold;display: inline-block;'>";
+            myvar += "Maili Görüntüle </a></td></tr></table></td></tr></table>";
+
+            var message = new Message(new string[] { "poyraz.celal97@gmail.com" }, "Test email async", myvar, null);
             await _emailSender.SendEmailAsync(message);
         }
 
