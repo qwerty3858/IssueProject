@@ -106,7 +106,6 @@ namespace IssueProject.Entity.Context
                 entity.Property(e => e.SubActivityNo).HasComment("Sıra No");
 
                 entity.Property(e => e.SubActivityTitle)
-                    .IsRequired()
                     .HasMaxLength(256)
                     .IsUnicode(false);
 
@@ -132,7 +131,6 @@ namespace IssueProject.Entity.Context
                     .HasComment("Açıklama");
 
                 entity.Property(e => e.Explanation)
-                    .IsRequired()
                     .HasMaxLength(2048)
                     .IsUnicode(false)
                     .HasComment("Açıklama");
@@ -256,8 +254,6 @@ namespace IssueProject.Entity.Context
             {
                 entity.ToTable("IssueRole");
 
-                entity.Property(e => e.Id);
-
                 entity.HasOne(d => d.Issue)
                     .WithMany(p => p.IssueRoles)
                     .HasForeignKey(d => d.IssueId)
@@ -270,6 +266,8 @@ namespace IssueProject.Entity.Context
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Role_IssueRole_");
             });
+
+           
 
             modelBuilder.Entity<Role>(entity =>
             {
@@ -287,7 +285,9 @@ namespace IssueProject.Entity.Context
             {
                 entity.ToTable("User");
 
-                entity.Property(e => e.Id).HasComment("Kullanıcı Sicil No");
+                entity.Property(e => e.Id)
+                    .ValueGeneratedNever()
+                    .HasComment("Kullanıcı Sicil No");
 
                 entity.Property(e => e.DepartmentId).HasComment("Departman");
 
@@ -321,9 +321,9 @@ namespace IssueProject.Entity.Context
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_Role_User_");
             });
+
             modelBuilder.Entity<UserToken>(entity =>
             {
-                
                 entity.ToTable("UserToken");
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -334,10 +334,9 @@ namespace IssueProject.Entity.Context
 
                 entity.Property(e => e.IssuedUtc).HasColumnType("datetime");
 
-                 
-
                 entity.Property(e => e.Subject).HasMaxLength(50);
             });
+
             OnModelCreatingPartial(modelBuilder);
         }
 

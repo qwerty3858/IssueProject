@@ -1,22 +1,14 @@
-﻿using IssueProject.Common;
-using IssueProject.Entity;
-using IssueProject.Entity.Context;
-using IssueProject.Models.Department;
+﻿using IssueProject.Models.Department;
 using IssueProject.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace IssueProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class DepartmentController : ControllerBase
     {
         DepartmentService _departmentService;

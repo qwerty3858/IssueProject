@@ -5,7 +5,9 @@ using System.Threading.Tasks;
 
 namespace IssueProject.Common
 {
-    public class Auxiliary
+    public class ConfirmModel
     {
+        public int issueRelevantDepartmentId { get; set; }
+        public string? description { get; set; }
     }
 }

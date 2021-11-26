@@ -16,7 +16,7 @@ namespace IssueProject.Helpers.TokenOperations
         public async Task<User> Login(string userName, string password)
         {
             var user = await _context.Users.Include(x =>x.Role).
-                FirstOrDefaultAsync(x => x.FullName == userName);
+                FirstOrDefaultAsync(x => x.FullName == userName );
             if (user == null)
             {
                 return null;

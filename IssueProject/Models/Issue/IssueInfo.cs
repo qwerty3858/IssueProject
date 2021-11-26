@@ -1,4 +1,5 @@
 ﻿using IssueProject.Entity;
+using IssueProject.Enums.Issue;
 using IssueProject.Models.IssueActivity;
 using IssueProject.Models.IssueAttachment;
 using IssueProject.Models.IssueComfirm;
@@ -17,18 +18,18 @@ namespace IssueProject.Models.Issue
     {
         public int Id { get; set; }
         public short WorkArea { get; set; }
-        public int DepartmentId { get; set; }
-        public int UserId { get; set; }
+       // public int DepartmentId { get; set; }
+        //public int UserId { get; set; }
         public short IssueNo { get; set; }
         public byte VersionNo { get; set; }
         public string Title { get; set; }
         public string Subtitle { get; set; }
         public string Summary { get; set; }
         public string Keywords { get; set; }
-        public bool Deleted { get; set; }
-
+        //public bool Deleted { get; set; }
+        public Status Status { get; set; }
         public virtual ICollection<IssueActivityInfo> IssueActivitiyInfos { get; set; }
-        //public virtual ICollection<IssueAttachmentInfo> IssueAttachmentInfos { get; set; }
+        public virtual ICollection<IssueAttachmentInfo> IssueAttachmentInfos { get; set; }
         public virtual ICollection<IssueConfirmInfo> IssueConfirmInfos { get; set; }
         public virtual ICollection<IssueNoteInfo> IssueNoteInfos { get; set; }
         public virtual ICollection<IssuePreconditionInfo> IssuePreconditionInfos { get; set; }

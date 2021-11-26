@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Enums.Issue
+﻿namespace IssueProject.Enums.Issue
 {
-   
-        public enum Status
+
+    public enum Status:byte
         {
             Calisiyor = 0,
             BimOnayBekleme = 1,
@@ -14,7 +9,8 @@ namespace IssueProject.Enums.Issue
             DepartmanOnay = 3,
             YazanDepartmanAmirOnay = 4,
             Kilitli = 5,
-            RedYapilmayacak = 6
-        }
+            RedYapilmayacak = 6,
+        Onaylandi = 7
+    }
     
 }

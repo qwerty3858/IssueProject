@@ -1,18 +1,13 @@
-﻿using IssueProject.Common;
-using IssueProject.Entity.Context;
-using IssueProject.Models.Role;
-using IssueProject.Services;
+﻿using IssueProject.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace IssueProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class RoleController : ControllerBase
     {
         RoleService _roleService;

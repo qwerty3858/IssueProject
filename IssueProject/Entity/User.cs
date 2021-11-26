@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 #nullable disable
 
@@ -20,7 +19,7 @@ namespace IssueProject.Entity
         public byte[] PasswordHash { get; set; }
         public byte[] PasswordSalt { get; set; }
         public string EmailAddress { get; set; }
-        public bool Deleted { get; set; }
+        public bool? Deleted { get; set; }
 
         public virtual Department Department { get; set; }
         public virtual Role Role { get; set; }

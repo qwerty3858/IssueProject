@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Enums.Confirm
+﻿namespace IssueProject.Enums.Confirm
 {
-    public enum ConfirmStatus
+    public enum ConfirmStatus:byte
     {
         MailGonderilmedi=0,
         MailGonderildiBeklemede=1,

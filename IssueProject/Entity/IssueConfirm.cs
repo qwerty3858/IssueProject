@@ -1,6 +1,5 @@
 ﻿using IssueProject.Enums.Confirm;
 using System;
-using System.Collections.Generic;
 
 #nullable disable
 

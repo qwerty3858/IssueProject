@@ -1,4 +1,5 @@
 ﻿using IssueProject.Enums.Confirm;
+using IssueProject.Models.Issue;
 using System;
 using System.Collections.Generic;
 
@@ -17,6 +18,8 @@ namespace IssueProject.Models.IssueComfirm
         public DateTime CreateTime { get; set; }
         public DateTime? MailTime { get; set; }
         public DateTime? SubmitTime { get; set; }
+
+        public IssueInfo IssueInfo { get; set; }
 
     }
 }

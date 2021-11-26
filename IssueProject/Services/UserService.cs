@@ -3,7 +3,6 @@ using IssueProject.Controllers;
 using IssueProject.Entity;
 using IssueProject.Entity.Context;
 using IssueProject.Models.User;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -53,6 +52,33 @@ namespace IssueProject.Services
 
         }
 
+        public async Task<Result<UserInfo>> GetUserByUserId(int id)
+        {
+
+            try
+            {
+                var vResult = await _context.Users
+                .Select(x => new UserInfo
+                {
+                    Id = x.Id,
+                    DepartmentId = x.DepartmentId,
+                    RoleId = x.RoleId,
+                    FullName = x.FullName,
+                    Password=x.Password,
+                    EmailAddress = x.EmailAddress
+
+                })
+                .FirstOrDefaultAsync(x => x.Id == id );
+
+                return Result<UserInfo>.PrepareSuccess(vResult);
+            }
+            catch (Exception vEx)
+            {
+
+                return Result<UserInfo>.PrepareFailure(vEx.Message);
+            }
+        }
+
         public async Task<Result<User>> AddUser(UserInfo userInfo)
         {
             try
@@ -85,7 +111,7 @@ namespace IssueProject.Services
         {
             try
             {
-                var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == userInfo.Id);
+                var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == userInfo.Id && x.Deleted==false);
                 if (vUser == null)
                 {
                     return Result<User>.PrepareFailure($"{userInfo.Id}'li veri Bulunamadı.");
@@ -95,7 +121,7 @@ namespace IssueProject.Services
                 vUser.FullName = userInfo.FullName;
                 vUser.Password = userInfo.Password;
                 vUser.EmailAddress = userInfo.EmailAddress;
-                vUser.Deleted = userInfo.Deleted;
+                vUser.Deleted = false;
 
                 await _context.SaveChangesAsync();
 

@@ -9,6 +9,7 @@ namespace IssueProject.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class UserController : ControllerBase
     {
             UserService _userService;
@@ -26,6 +27,12 @@ namespace IssueProject.Controllers
                 var vResult = await _userService.GetUsers();
                 return Ok(vResult);
             }
+        [HttpGet("GetByUserId/{id}")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var vResult = await _userService.GetUserByUserId(id);
+            return Ok(vResult);
+        }
 
 
             [HttpPost("Add")]
