@@ -57,7 +57,7 @@ namespace IssueProject.Services
 
             try
             {
-                var vResult = await _context.Users
+                var vResult = await _context.Users.Include(a=>a.Role).Include(d=>d.Department)
                 .Select(x => new UserInfo
                 {
                     Id = x.Id,
@@ -65,7 +65,9 @@ namespace IssueProject.Services
                     RoleId = x.RoleId,
                     FullName = x.FullName,
                     Password=x.Password,
-                    EmailAddress = x.EmailAddress
+                    EmailAddress = x.EmailAddress,
+                    DepartmentName=x.Department.Definition,
+                    RoleName=x.Role.Definition
 
                 })
                 .FirstOrDefaultAsync(x => x.Id == id );

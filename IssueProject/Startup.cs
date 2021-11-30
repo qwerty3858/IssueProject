@@ -1,8 +1,6 @@
 using EmailService;
 using IssueProject.Entity.Context;
-using IssueProject.Helpers.TokenOperations;
 using IssueProject.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
@@ -10,10 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using Serilog;
-using System.Net;
+using Serilog.Context;
+using System.Globalization;
 using System.Text;
 
 namespace IssueProject
@@ -48,13 +49,29 @@ namespace IssueProject
 
             });
 
-            services.AddControllers().AddJsonOptions(options =>
+            services.AddControllers().AddNewtonsoftJson(options =>
             {
-                // Use the default property (Pascal) casing
-                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
-                options.JsonSerializerOptions.PropertyNamingPolicy = null;
-                options.JsonSerializerOptions.WriteIndented = true;
-            }).AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+                options.SerializerSettings.ContractResolver = new DefaultContractResolver(); //For PascalCase Fields
+                options.SerializerSettings.DateFormatHandling = DateFormatHandling.IsoDateFormat;
+                options.SerializerSettings.DateParseHandling = DateParseHandling.DateTimeOffset;
+                options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Local;
+                options.SerializerSettings.DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'sszzz"; //
+                /*options.SerializerSettings.DateTimeZoneHandling = DateTimeZoneHandling.Utc;
+                options.SerializerSettings.DateFormatString = "yyyy'-'MM'-'dd'T'HH':'mm':'ssZ";*/
+                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+                options.SerializerSettings.MissingMemberHandling = MissingMemberHandling.Ignore;
+                options.SerializerSettings.Formatting = Formatting.None;
+                options.SerializerSettings.FloatParseHandling = FloatParseHandling.Decimal;
+                options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+                options.SerializerSettings.Culture = CultureInfo.GetCultureInfo("tr-TR");
+                options.SerializerSettings.Error = (sender, args) =>
+                {
+                    using (LogContext.PushProperty("CurrentObject", args.CurrentObject))
+                        Log.Logger.Error(args.ErrorContext.Error, "{ErrorMessage}",
+                            args.ErrorContext.Error.Message);
+                };
+                options.SerializerSettings.Converters.Add(new StringEnumConverter());
+            });/*.AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore)*/;
             //services.AddControllers().AddNewtonsoftJson(x => x.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
             services.AddCors(options =>
             {
@@ -121,10 +138,15 @@ namespace IssueProject
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IssueProject v1"));
             app.UseSerilogRequestLogging();
-            
+
             //app.UseHttpsRedirection();
 
-            app.UseStaticFiles();
+            
+            //app.UseStaticFiles(new StaticFileOptions()
+            //{
+            //    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"Resources")),
+            //    RequestPath = new PathString("/Resources")
+            //});
 
             app.UseRouting();
 
@@ -133,6 +155,8 @@ namespace IssueProject
             app.UseAuthentication();
 
             app.UseAuthorization();
+            
+            app.UseStaticFiles();
 
             app.UseEndpoints(endpoints =>
             {

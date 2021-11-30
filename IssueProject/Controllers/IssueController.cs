@@ -1,12 +1,8 @@
 ﻿using IssueProject.Common;
 using IssueProject.Models.Issue;
 using IssueProject.Services;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
@@ -19,58 +15,46 @@ namespace IssueProject.Controllers
     {
         IssueService _issueService;
         IHttpContextAccessor _httpContextAccessor;
-        private IHostingEnvironment Environment;
-        public IssueController(IssueService issueService, IHttpContextAccessor httpContextAccessor, IHostingEnvironment _environment)
+        public IssueController(IssueService issueService, IHttpContextAccessor httpContextAccessor)
         {
             _issueService = issueService;
             _httpContextAccessor = httpContextAccessor;
-            Environment = _environment;
         }
         [HttpPost("Add")]
-       
+
         public async Task<IActionResult> AddIssue(IssueInfo issueInfo)
         {
             string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            //var file = Request.Form.Files[0];
             var vResult = await _issueService.AddIssue(issueInfo, vUserId);
             return Ok(vResult);
         }
 
-        [HttpGet("PrivateList")]
+        [HttpGet("SuperAdminIssueList")]
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> IssueList()
         {
-            
+
             var vResult = await _issueService.GetList();
             return Ok(vResult);
         }
 
         [HttpPost("Confirm")]
-        
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Confirmation(ConfirmModel confirmModel)
         {
             string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var vResult = await _issueService.Confirm(confirmModel.issueRelevantDepartmentId, "1");
+            var vResult = await _issueService.Confirm(confirmModel.issueRelevantDepartmentId, vUserId);
             return Ok(vResult);
         }
 
-        [HttpPost("demo")]
-
-        //[Authorize(Roles = "SuperAdmin")]
-        public IActionResult demo(IFormFileCollection confirmModel)
+        [HttpPost("Upload"), DisableRequestSizeLimit]
+        public async Task<IActionResult> FileUpload()
         {
-            byte[] fileBytes;
-            foreach (var attachment in confirmModel)
-            {
-                using (var ms = new MemoryStream())
-                {
-                    attachment.CopyTo(ms);
-                    fileBytes = ms.ToArray();
-                }
-
-            }
-
-            return Ok("EKLENDİ");
+            // string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var file = Request.Form.Files[0];
+            var vResult = await _issueService.Upload(file);
+            return Ok(vResult);
         }
 
         [HttpPost("Reject")]
@@ -78,12 +62,12 @@ namespace IssueProject.Controllers
         public async Task<IActionResult> Rejection(ConfirmModel confirmModel)
         {
             string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var vResult = await _issueService.Reject(confirmModel.issueRelevantDepartmentId, vUserId,confirmModel.description);
+            var vResult = await _issueService.Reject(confirmModel.issueRelevantDepartmentId, vUserId, confirmModel.description);
             return Ok(vResult);
         }
 
-        [HttpGet("PublicList")]
-        
+        [HttpGet("PrivateIssueList")]
+
         public async Task<IActionResult> IssueListById()
         {
             string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
@@ -91,13 +75,30 @@ namespace IssueProject.Controllers
             return Ok(vResult);
         }
 
-        [HttpGet("SelectedList")]
-       
-        public async Task<IActionResult> GetSelectedList(int issueId)
+        [HttpGet("ComeToMeIssues")]
+
+        public async Task<IActionResult> GetListComeToMeIssues()
         {
-             
-            var vResult = await _issueService.SelectedListById(issueId);
+            // string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            var vResult = await _issueService.GetListComeToMeIssues("2");
             return Ok(vResult);
         }
+
+        [HttpGet("SelectedIssue/{issueId}")]
+
+        public async Task<IActionResult> GetSelectedIssue(int issueId)
+        {
+
+            var vResult = await _issueService.SelectedIssueById(issueId);
+            return Ok(vResult);
+        }
+
+        [HttpPut("SoftDelete")]
+        public async Task<IActionResult> DeleteIssue(int id)
+        {
+            var vResult = await _issueService.DeleteIssue(id);
+            return Ok(vResult);
+        }
+
     }
 }

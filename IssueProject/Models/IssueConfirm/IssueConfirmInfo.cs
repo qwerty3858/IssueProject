@@ -19,7 +19,7 @@ namespace IssueProject.Models.IssueComfirm
         public DateTime? MailTime { get; set; }
         public DateTime? SubmitTime { get; set; }
 
-        public IssueInfo IssueInfo { get; set; }
+        //public IssueInfo IssueInfo { get; set; }
 
     }
 }

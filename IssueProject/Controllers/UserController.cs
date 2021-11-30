@@ -9,7 +9,7 @@ namespace IssueProject.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class UserController : ControllerBase
     {
             UserService _userService;
@@ -50,7 +50,7 @@ namespace IssueProject.Controllers
                 return Ok(vResult);
             }
 
-            [HttpDelete("DeleteUser/{id}")]
+            [HttpDelete("Delete/{id}")]
             public async Task<IActionResult> DeleteUser(int id)
             {
                 var delete = await _userService.DeleteUser(id);

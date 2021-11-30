@@ -1,15 +1,12 @@
 ﻿using MimeKit;
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MailKit.Net.Smtp;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EmailService
 {
-   public class EmailSender:IEmailSender
+    public class EmailSender:IEmailSender
     {
         private readonly EmailConfiguration _emailConfig;
 

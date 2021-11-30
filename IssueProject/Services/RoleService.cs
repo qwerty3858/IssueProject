@@ -23,7 +23,7 @@ namespace IssueProject.Services
         {
             try
             {
-                var vResult = await _context.Roles.Select(x => new RoleInfo
+                var vResult = await _context.Roles.Where(x=>x.Id>2).Select(x => new RoleInfo
                 {
                     Id = x.Id,
                     Definition = x.Definition

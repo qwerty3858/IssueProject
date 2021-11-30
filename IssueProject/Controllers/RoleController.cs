@@ -7,7 +7,7 @@ namespace IssueProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class RoleController : ControllerBase
     {
         RoleService _roleService;

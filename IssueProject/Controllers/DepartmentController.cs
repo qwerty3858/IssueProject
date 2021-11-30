@@ -8,7 +8,7 @@ namespace IssueProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class DepartmentController : ControllerBase
     {
         DepartmentService _departmentService;
@@ -43,7 +43,7 @@ namespace IssueProject.Controllers
             return Ok(vResult);
         }
 
-        [HttpDelete("DeleteDepartment/{id}")]
+        [HttpDelete("Delete/{id}")]
         public async Task<IActionResult> DeleteDepartment(int id)
         {
             var delete = await _departmentService.DeleteDepartment(id);
