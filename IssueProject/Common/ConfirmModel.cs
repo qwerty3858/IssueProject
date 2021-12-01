@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Common
+﻿namespace IssueProject.Common
 {
     public class ConfirmModel
     {
-        public int issueRelevantDepartmentId { get; set; }
-        public string? description { get; set; }
+        public int IssueId { get; set; }
+        public string Description { get; set; }
     }
 }

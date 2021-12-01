@@ -7,16 +7,7 @@ namespace IssueProject.Entity
 {
     public partial class Issue
     {
-        public Issue()
-        {
-            IssueActivitiys = new HashSet<IssueActivitiy>();
-           // IssueAttachments = new HashSet<IssueAttachment>();
-            //IssueConfirms = new HashSet<IssueConfirm>();
-            IssueNotes = new HashSet<IssueNote>();
-            IssuePreconditions = new HashSet<IssuePrecondition>();
-            IssueRelevantDepartmants = new HashSet<IssueRelevantDepartmant>();
-            IssueRoles = new HashSet<IssueRole>();
-        }
+       
 
         public int Id { get; set; }
         public short WorkArea { get; set; }
@@ -28,7 +19,7 @@ namespace IssueProject.Entity
         public string Subtitle { get; set; }
         public string Summary { get; set; }
         public string? Keywords { get; set; }
-        public Status Status { get; set; }
+        public ActivityStatus Status { get; set; }
         public bool Deleted { get; set; }
 
         public virtual Department Department { get; set; }

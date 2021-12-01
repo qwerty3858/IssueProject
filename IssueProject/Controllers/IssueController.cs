@@ -24,9 +24,9 @@ namespace IssueProject.Controllers
 
         public async Task<IActionResult> AddIssue(IssueInfo issueInfo)
         {
-            string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            //string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
             //var file = Request.Form.Files[0];
-            var vResult = await _issueService.AddIssue(issueInfo, vUserId);
+            var vResult = await _issueService.AddIssue(issueInfo, "1");
             return Ok(vResult);
         }
 
@@ -43,8 +43,8 @@ namespace IssueProject.Controllers
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Confirmation(ConfirmModel confirmModel)
         {
-            string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var vResult = await _issueService.Confirm(confirmModel.issueRelevantDepartmentId, vUserId);
+            int vUserId = User.GetSubject<int>();
+            var vResult = await _issueService.Confirm(confirmModel.IssueId, vUserId);
             return Ok(vResult);
         }
 
@@ -62,7 +62,7 @@ namespace IssueProject.Controllers
         public async Task<IActionResult> Rejection(ConfirmModel confirmModel)
         {
             string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var vResult = await _issueService.Reject(confirmModel.issueRelevantDepartmentId, vUserId, confirmModel.description);
+            var vResult = await _issueService.Reject(confirmModel.IssueId, vUserId, confirmModel.Description);
             return Ok(vResult);
         }
 

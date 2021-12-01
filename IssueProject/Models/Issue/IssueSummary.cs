@@ -1,5 +1,4 @@
-﻿using IssueProject.Enums.Confirm;
-using IssueProject.Models.IssueRelevantDepartMent;
+﻿using IssueProject.Models.IssueRelevantDepartMent;
 using System.Collections.Generic;
 
 namespace IssueProject.Models.Issue
@@ -12,6 +11,6 @@ namespace IssueProject.Models.Issue
         public string FullName { get; set; }
         public string RoleName { get; set; }
         public int Status { get; set; }
-        public IssueRelevantDepartmentInfo Deparment { get; set; }
+        public List<IssueRelevantDepartmentInfo> RelevantDepartmentId { get; set; }
     }
 }

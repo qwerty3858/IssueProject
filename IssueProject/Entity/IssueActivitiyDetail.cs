@@ -1,4 +1,4 @@
-﻿#nullable disable
+﻿using System.Collections.Generic;
 
 namespace IssueProject.Entity
 {
@@ -11,7 +11,8 @@ namespace IssueProject.Entity
         public byte RoleId { get; set; }
         public byte Medium { get; set; }
         public string Explanation { get; set; }
+        public int? ParentId { get; set; }
 
-        public virtual IssueActivitiy IssueActivity { get; set; }
+        public virtual List<IssueActivitiyDetail> IssueActivityDetail { get; set; }
     }
 }

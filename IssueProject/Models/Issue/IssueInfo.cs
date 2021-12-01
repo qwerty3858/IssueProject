@@ -19,7 +19,7 @@ namespace IssueProject.Models.Issue
         public string Summary { get; set; }
         //public string? Keywords { get; set; }
         //public bool Deleted { get; set; }
-        public Status? Status { get; set; }
+        public ActivityStatus? Status { get; set; }
         public virtual ICollection<IssueActivityInfo>? IssueActivitiyInfos { get; set; }
         public virtual ICollection<IssueAttachmentInfo> IssueAttachmentInfos { get; set; }
         //public virtual List<IssueConfirmInfo>? IssueConfirmInfos { get; set; }

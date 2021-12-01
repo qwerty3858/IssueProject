@@ -6,11 +6,7 @@ namespace IssueProject.Entity
 {
     public partial class Role
     {
-        public Role()
-        {
-            IssueRoles = new HashSet<IssueRole>();
-            Users = new HashSet<User>();
-        }
+       
 
         public byte Id { get; set; }
         public string Definition { get; set; }

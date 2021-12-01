@@ -1,11 +1,4 @@
-﻿using IssueProject.Entity;
-using IssueProject.Models.IssueActivityDetail;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Models.Department
+﻿namespace IssueProject.Models.Department
 {
     public class DepartmentInfo
     {

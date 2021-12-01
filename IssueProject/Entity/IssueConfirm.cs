@@ -12,7 +12,7 @@ namespace IssueProject.Entity
         public byte VersionNo { get; set; }
         public int DepartmentId { get; set; }
         public int UserId { get; set; }
-        public ConfirmStatus Status { get; set; }
+        public ConfirmStatuses Status { get; set; }
         public string Description { get; set; }
         public DateTime CreateTime { get; set; }
         public DateTime? MailTime { get; set; }

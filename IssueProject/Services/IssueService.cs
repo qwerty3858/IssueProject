@@ -2,6 +2,7 @@
 using IssueProject.Common;
 using IssueProject.Entity;
 using IssueProject.Entity.Context;
+using IssueProject.Enums.Confirm;
 using IssueProject.Enums.Issue;
 using IssueProject.Models.Issue;
 using IssueProject.Models.IssueComfirm;
@@ -62,7 +63,7 @@ namespace IssueProject.Services
         {
             try
             {
-               // List<IssueAttachment> vIssueAttachment;
+                // List<IssueAttachment> vIssueAttachment;
                 var folderName = Path.Combine("Resources", "Images");
                 var pathToSave = Path.Combine(Directory.GetCurrentDirectory(), folderName);
                 if (file.Length > 0)
@@ -72,10 +73,10 @@ namespace IssueProject.Services
                     var dbPath = Path.Combine(folderName, fileName);
                     using (var stream = new FileStream(fullPath, FileMode.Create))
                     {
-                      await  file.CopyToAsync(stream);
+                        await file.CopyToAsync(stream);
                     }
-                   
-                   return Result.PrepareSuccess("Dosya eklendi");
+
+                    return Result.PrepareSuccess("Dosya eklendi");
                 }
 
                 _logger.LogInformation("Dosya Yüklenemedi. ");
@@ -102,9 +103,12 @@ namespace IssueProject.Services
                                 FullName = x.User.FullName,
                                 RoleName = x.User.Role.Definition,
                                 Status = ((int)x.Status),
-                                Deparment = new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
+                                RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
                                 {
-                                    DepartmentId = x.DepartmentId
+                                     new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
+                                     {
+                                        DepartmentId = x.DepartmentId
+                                     }
                                 }
 
                             }).ToListAsync();
@@ -126,22 +130,26 @@ namespace IssueProject.Services
         {
             try
             {
-                var vIssues = await _context.Issues.Include(x => x.IssueRelevantDepartmants).Where(x => x.UserId.ToString() == userId && x.Deleted == false)
-
-                            .Select(x => new IssueSummary
+                var vIssues = await _context.Issues
+                    .Include(x => x.IssueRelevantDepartmants)
+                    .Include(x => x.Department)
+                    .Where(x => x.UserId.ToString() == userId && x.Deleted == false)
+                    .Select(x => new IssueSummary
+                    {
+                        Id = x.Id,
+                        WorkArea = x.WorkArea,
+                        DepartmentName = x.Department.Definition,
+                        FullName = x.User.FullName,
+                        RoleName = x.User.Role.Definition,
+                        Status = ((int)x.Status),
+                        RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
+                        {
+                            new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
                             {
-                                Id = x.Id,
-                                WorkArea = x.WorkArea,
-                                DepartmentName = x.Department.Definition,
-                                FullName = x.User.FullName,
-                                RoleName = x.User.Role.Definition,
-                                Status = ((int)x.Status),
-                                Deparment = new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
-                                {
-                                    DepartmentId = x.DepartmentId
-                                }
-
-                            }).ToListAsync();
+                                DepartmentId = x.DepartmentId
+                            }
+                        }
+                    }).ToListAsync();
                 if (vIssues == null)
                 {
                     _logger.LogInformation("İstenilen sorguya ait veri bulunamadı. ");
@@ -159,7 +167,7 @@ namespace IssueProject.Services
         {
             try
             {
-                
+
                 var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id.ToString() == userId && x.Deleted == false);
                 if (vUser == null)
                 {
@@ -167,21 +175,24 @@ namespace IssueProject.Services
                     return Result<List<IssueSummary>>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
                 }
 
-                var vIssues = await _context.Issues.Include(x=>x.IssueRelevantDepartmants).Where(x => x.DepartmentId == vUser.DepartmentId)
+                var vIssues = await _context.Issues.Include(x => x.IssueRelevantDepartmants).Where(x => x.DepartmentId == vUser.DepartmentId)
                     .Select(x => new IssueSummary
-                {
-                    Id = x.Id,
-                    WorkArea = x.WorkArea,
-                    DepartmentName = x.Department.Definition,
-                    FullName = x.User.FullName,
-                    RoleName = x.User.Role.Definition,
-                    Status = ((int)x.Status),
-                    Deparment = new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
                     {
-                        DepartmentId = x.DepartmentId
-                    }
+                        Id = x.Id,
+                        WorkArea = x.WorkArea,
+                        DepartmentName = x.Department.Definition,
+                        FullName = x.User.FullName,
+                        RoleName = x.User.Role.Definition,
+                        Status = ((int)x.Status),
+                        RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
+                        {
+                            new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
+                            {
+                                DepartmentId = x.DepartmentId
+                            }
+                        }
 
-                }).ToListAsync();
+                    }).ToListAsync();
                 if (vIssues.Count == 0)
                 {
                     return Result<List<IssueSummary>>.PrepareFailure("Size Gelen Issue Bilgisi Bulunamadı.");
@@ -198,7 +209,8 @@ namespace IssueProject.Services
         {
             try
             {
-                var vIssues = await _context.Issues.Include(x => x.User).FirstOrDefaultAsync(x => x.DepartmentId == departmentId && x.UserId.ToString() == vUserId);
+                var vIssues = await _context.Issues.Include(x => x.User)
+                    .FirstOrDefaultAsync(x => x.DepartmentId == departmentId && x.UserId.ToString() == vUserId);
 
                 if (vIssues == null)
                 {
@@ -207,16 +219,16 @@ namespace IssueProject.Services
                 }
                 vIssues.IssueConfirms.ForEach(x => new IssueConfirmInfo
                 {
-                    Status = Enums.Confirm.ConfirmStatus.Reddedildi,
+                    Status = Enums.Confirm.ConfirmStatuses.Reddedildi,
                     Description = description,
                     DepartmentId = departmentId,
                     UserId = x.UserId,
                     SubmitTime = DateTime.Now,
 
                 });
-                vIssues.Status = Status.RedYapilmayacak;
+                vIssues.Status = ActivityStatuses.RedYapilmayacak;
 
-               
+
                 var message = new Message(new string[] { vIssues.User.EmailAddress }, "Talep Reddi ", vIssues.User.FullName +
                 " kişi tarafından Talep Reddedilme Maili gönderilmiştir.\n Açıklama : " + description
                 , null);
@@ -241,78 +253,151 @@ namespace IssueProject.Services
             }
         }
 
-        public async Task<Result<Issue>> Confirm(int departmentId, string vUserId)
+        public async Task<Result<Issue>> Confirm(int IssueId, int UserId)
         {
             try
             {
+                var Issue = await _context.Issues
+                    .Include(x => x.User)
+                    .Include(x => x.IssueRelevantDepartmants)
+                    .ThenInclude(x=>x.Department)
+                    .ThenInclude(x=>x.Users)
+                    .FirstOrDefaultAsync(x => x.Id == IssueId);
 
-                var vIssues = await _context.Issues.Include(x => x.User).Include(x => x.IssueConfirms).FirstOrDefaultAsync(x => x.DepartmentId == departmentId && x.UserId.ToString() == vUserId);
-
-                if (vIssues == null)
-                {
-                    _logger.LogInformation("İstenilen sorguya ait veri bulunamadı. ");
+                if (Issue == null)
                     return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
-                }
-                switch (vIssues.Status)
+
+                if (Issue.IssueRelevantDepartmants.All(x => x.Department.Users.All(y => y.Id != UserId)))
+                    return Result<Issue>.PrepareFailure("Onaylamak istediğiniz madde için izniniz bulunmamaktadır!");
+
+                switch (Issue.Status)
                 {
-                    case Status.BimOnayBekleme:
+                    case ActivityStatuses.Calisiyor:
                         {
-                            vIssues.IssueConfirms.ForEach(x =>
-                            x.Status = Enums.Confirm.ConfirmStatus.MailGonderildiBeklemede
-                            );
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                            {
+                                _context.IssueConfirms.Add(new IssueConfirm
+                                {
+                                      IssueId = IssueId,
+                                      VersionNo = 0,
+                                      DepartmentId = vDepartment.DepartmentId,
+                                      UserId = vUser.Id,
+                                      Status = ConfirmStatuses.MailGonderilmedi
+                                });
+                            }
 
-                            vIssues.Status = Status.BimOnay;
+                            Issue.Status = ActivityStatuses.BimOnayBekleme;
                             break;
                         }
-                    case Status.BimOnay:
+                    case ActivityStatuses.BimOnayBekleme:
                         {
-                            vIssues.IssueConfirms.ForEach(x =>
-                            x.Status = Enums.Confirm.ConfirmStatus.MailGonderildiBeklemede
-                            );
-                            vIssues.Status = Status.DepartmanOnay;
-                            break;
-                        }
-                    case Status.DepartmanOnay:
-                        {
-                            vIssues.IssueConfirms.ForEach(x =>
-                           x.Status = Enums.Confirm.ConfirmStatus.MailGonderildiBeklemede
-                           );
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailGonderildiBeklemede
+                                    });
+                                }
 
-                            vIssues.Status = Status.YazanDepartmanAmirOnay;
+                            Issue.Status = ActivityStatuses.BimOnay;
                             break;
                         }
-                    case Status.YazanDepartmanAmirOnay:
+                    case ActivityStatuses.BimOnay:
                         {
-                            vIssues.IssueConfirms.ForEach(x =>
-                            x.Status = Enums.Confirm.ConfirmStatus.MailGonderildiBeklemede
-                            );
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailGonderildiBeklemede
+                                    });
+                                }
+                            Issue.Status = ActivityStatuses.DepartmanOnay;
                             break;
                         }
-                    case Status.Onaylandi:
+                    case ActivityStatuses.DepartmanOnay:
                         {
-                            vIssues.IssueConfirms.ForEach(x =>
-                            x.Status = Enums.Confirm.ConfirmStatus.Onaylandi
-                            );
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailGonderildiBeklemede
+                                    });
+                                }
+
+                            Issue.Status = ActivityStatuses.YazanDepartmanAmirOnay;
+                            break;
+                        }
+                    case ActivityStatuses.YazanDepartmanAmirOnay:
+                        {
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailGonderildiBeklemede
+                                    });
+                                }
+                            break;
+                        }
+                    case ActivityStatuses.Onaylandi:
+                        {
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.Onaylandi
+                                    });
+                                }
 
                             break;
                         }
                     default:
                         {
-                            vIssues.IssueConfirms.ForEach(x =>
-                            x.Status = Enums.Confirm.ConfirmStatus.MailGonderilmedi
-                            );
+                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                foreach (var vUser in vDepartment.Department.Users)
+                                {
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = 0,
+                                        DepartmentId = vDepartment.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailGonderilmedi,
+                                        
+                                    });
+                                }
 
-                            vIssues.Status = Status.Kilitli;
+                            Issue.Status = ActivityStatuses.Kilitli;
                             break;
                         }
                 }
-                vIssues.IssueConfirms.ForEach(x =>
-                {
-                    x.SubmitTime = DateTime.Now;
-                    x.DepartmentId = departmentId;
-                });
-
-                var message = new Message(new string[] { vIssues.User.EmailAddress }, "Test email ", vIssues.User.FullName +
+              
+                var message = new Message(new string[] { Issue.User.EmailAddress }, "Test email ", Issue.User.FullName +
                 " kişi tarafından Bilgilendirme Maili gönderilmiştir."
                 , null);
                 await _emailSender.SendEmailAsync(message);
@@ -322,13 +407,10 @@ namespace IssueProject.Services
                     _logger.LogInformation("Mail Gönderilemedi.");
                     return Result<Issue>.PrepareFailure("Mail Gönderilemedi.");
                 }
-                vIssues.IssueConfirms.ForEach(x =>
-                {
-                    x.MailTime = DateTime.Now;
-                });
+             
                 await _context.SaveChangesAsync();
 
-                return Result<Issue>.PrepareSuccess(vIssues);
+                return Result<Issue>.PrepareSuccess(Issue);
             }
             catch (Exception vEx)
             {
@@ -371,44 +453,37 @@ namespace IssueProject.Services
                     Explanation = x.Explanation
                 });
 
-                var vIssueActivity = issueInfo.IssueActivitiyInfos.Select(x => new IssueActivitiy
-                {
-                    Type = x.Type,
-                    SubActivityNo = x.SubActivityNo,
-                    SubActivityTitle = x.SubActivityTitle,
-                    IssueActivitiyDetails = x.IssueActivitiyDetailInfos.Select(x => new IssueActivitiyDetail
+                var vIssueActivity = issueInfo.IssueActivitiyInfos
+                    .Select(a => new IssueActivitiy
                     {
-                        LineNo = x.LineNo,
-                        Definition = x.Definition,
-                        RoleId = vUser.RoleId,
-                        Medium = x.Medium,
-                        Explanation = x.Explanation
-                    }).ToList()
+                        Type = a.Type,
+                        SubActivityNo = a.SubActivityNo,
+                        SubActivityTitle = a.SubActivityTitle,
+                        IssueActivitiyDetails = a.IssueActivitiyDetailInfos
+                        .Select(x => new IssueActivitiyDetail
+                        {
+                            ParentId = 0,
+                            LineNo = x.LineNo,
+                            Definition = x.Definition,
+                            RoleId = vUser.RoleId,
+                            Medium = x.Medium,
 
-                });
+                            Explanation = x.Explanation,
+                            IssueActivityDetail = new List<IssueActivitiyDetail> { }
 
-                var vConfirm = new List<IssueConfirm>
-                {
-                    new IssueConfirm()
-                    {
-                    DepartmentId = vUser.DepartmentId,
-                    UserId = Int32.Parse(UserId),
-                    Status = Enums.Confirm.ConfirmStatus.MailGonderildiBeklemede,
-                    Description="",
-                    CreateTime = DateTime.Now,
-                    MailTime = DateTime.Now,
-                    SubmitTime = DateTime.Now,
-                    }
-                };
+                        }).ToList()
+
+                    });
+
                 var vIssueRole = issueInfo.IssueRoleInfos.Select(x => new IssueRole
                 {
                     RoleId = (byte)(x.RoleId)
                 });
                 var vAttachment = issueInfo.IssueAttachmentInfos.Select(x => new IssueAttachment
                 {
-                    Deleted=false,
-                    FileName=x.FileName,
-                    UniqueName=Guid.NewGuid().ToString()
+                    Deleted = false,
+                    FileName = x.FileName,
+                    UniqueName = Guid.NewGuid().ToString()
                 });
 
 
@@ -424,15 +499,14 @@ namespace IssueProject.Services
                     Subtitle = issueInfo.Subtitle,
                     Summary = issueInfo.Summary,
                     Keywords = "",
-                    Status = Status.BimOnayBekleme,
+                    Status = ActivityStatuses.BimOnayBekleme,
                     Deleted = false,
                     IssueActivitiys = vIssueActivity.ToList(),
                     IssueNotes = vIssueNote.ToList(),
                     IssuePreconditions = vPrecondition.ToList(),
                     IssueRelevantDepartmants = vRevelantDepartment.ToList(),
                     IssueRoles = vIssueRole.ToList(),
-                    IssueConfirms = vConfirm,
-                    IssueAttachments= vAttachment.ToList()
+                    IssueAttachments = vAttachment.ToList()
 
                 };
 
@@ -462,13 +536,13 @@ namespace IssueProject.Services
             }
         }
 
-        
+
         public async Task<Result<Issue>> DeleteIssue(int id)
         {
             try
             {
                 var vIssue = _context.Issues
-                    .Include(x=>x.IssueAttachments)
+                    .Include(x => x.IssueAttachments)
                     .FirstOrDefault(x => x.Id == id);
 
                 if (vIssue == null)
@@ -489,9 +563,9 @@ namespace IssueProject.Services
             {
                 _logger.LogInformation($"Delete Issue Error.{vEx.InnerException}");
                 return Result<Issue>.PrepareFailure(vEx.Message);
-                
+
             }
         }
 
-}
+    }
 }

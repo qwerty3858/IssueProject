@@ -6,12 +6,7 @@ namespace IssueProject.Entity
 {
     public partial class Department
     {
-        public Department()
-        {
-            IssueRelevantDepartmants = new HashSet<IssueRelevantDepartmant>();
-            Issues = new HashSet<Issue>();
-            Users = new HashSet<User>();
-        }
+        
 
         public int Id { get; set; }
         public string Definition { get; set; }
