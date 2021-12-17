@@ -9,6 +9,6 @@ namespace IssueProject.Entity
         public short LineNo { get; set; }
         public string Explanation { get; set; }
 
-        public virtual Issue Issue { get; set; }
+        //public virtual Issue Issue { get; set; }
     }
 }

@@ -27,7 +27,7 @@ namespace IssueProject.Services
         {
             try
             {
-                var vResult = await _context.Departments.Select(x => new DepartmentInfo
+                var vResult = await _context.Departments.Where(x=>x.Id>1).Select(x => new DepartmentInfo
                 {
                     Id = x.Id,
                     Definition = x.Definition

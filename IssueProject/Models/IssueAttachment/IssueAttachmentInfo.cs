@@ -8,7 +8,7 @@ namespace IssueProject.Models.IssueAttachment
         public int IssueId { get; set; }
         public string FileName { get; set; }
         public string UniqueName { get; set; }
-        public bool Deleted { get; set; }
+         
         
     }
 }

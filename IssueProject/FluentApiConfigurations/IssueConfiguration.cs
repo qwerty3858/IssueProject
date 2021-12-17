@@ -31,12 +31,18 @@ namespace IssueProject.FluentApiConfigurations
          
                 modelBuilder.Property(e => e.UserId).HasComment("Kullanıcı Id");
              
-                modelBuilder.Property(e => e.WorkArea).HasComment("Üretim Yeri 550/552");
+                modelBuilder.Property(e => e.WorkArea).HasMaxLength(50).IsUnicode(false).HasComment("Üretim Yeri 550/552");
                 
                 modelBuilder.HasOne(d => d.Department).WithMany(p => p.Issues).HasForeignKey(d => d.DepartmentId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_Department_Issue_");
                 
                 modelBuilder.HasOne(d => d.User).WithMany(p => p.Issues).HasForeignKey(d => d.UserId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_User_Issue_");
-            
+
+               // modelBuilder.HasOne(d => d.Issue)
+               //.WithMany(p => p.IssuePreconditions)
+               //.HasForeignKey(d => d.IssueId)
+               //.OnDelete(DeleteBehavior.ClientSetNull)
+               //.HasConstraintName("FK_Issue_IssuePrecondition_");
+
         }
     }
 }

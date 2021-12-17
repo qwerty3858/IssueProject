@@ -14,6 +14,7 @@ namespace IssueProject.Entity.Context
         public _2Mes_ConceptualContext(DbContextOptions<_2Mes_ConceptualContext> options)
             : base(options)
         {
+            
         }
 
         public virtual DbSet<Department> Departments { get; set; }
@@ -29,7 +30,8 @@ namespace IssueProject.Entity.Context
         public virtual DbSet<Role> Roles { get; set; }
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<UserToken> UserTokens { get; set; }
-
+        public virtual DbSet<IssueSubTitle> IssueSubTitles { get; set; }
+        public virtual DbSet<IssueTitle> IssueTitles { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //FluentApiCompany için
@@ -47,6 +49,8 @@ namespace IssueProject.Entity.Context
             modelBuilder.ApplyConfiguration(new RoleConfiguration());
             modelBuilder.ApplyConfiguration(new UserConfiguration());
             modelBuilder.ApplyConfiguration(new UserTokenConfiguration());
+            modelBuilder.ApplyConfiguration(new IssueTitleConfiguration());
+            modelBuilder.ApplyConfiguration(new IssueSubTitleConfiguration());
 
         }
     }

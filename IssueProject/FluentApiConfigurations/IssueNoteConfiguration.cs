@@ -20,11 +20,11 @@ namespace IssueProject.FluentApiConfigurations
                 .HasMaxLength(2048)
                 .IsUnicode(false);
 
-            modelBuilder.HasOne(d => d.Issue)
-                .WithMany(p => p.IssueNotes)
-                .HasForeignKey(d => d.IssueId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Issue_IssueNote_");
+            //modelBuilder.HasOne(d => d.Issue)
+            //    .WithMany(p => p.IssueNotes)
+            //    .HasForeignKey(d => d.IssueId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull)
+            //    .HasConstraintName("FK_Issue_IssueNote_");
 
         }
     }

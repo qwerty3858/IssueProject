@@ -1,22 +1,21 @@
-﻿namespace IssueProject.Enums.Confirm
+﻿namespace IssueProject.Common
 {
     public enum ActivityStatuses : byte
     {
-        Calisiyor = 0,
-        BimOnayBekleme = 1,
-        BimOnay = 2,
-        DepartmanOnay = 3,
-        YazanDepartmanAmirOnay = 4,
-        Kilitli = 5,
-        RedYapilmayacak = 6,
-        Onaylandi = 7
+        Processing = 0,
+        ITWaiting = 1,
+        DepartmentWaiting = 2,
+        ManagerWaiting = 3,
+        ManagerCommitted = 4,
+        Locked = 5,
+        Rejected = 9
     }
 
-    public enum ConfirmStatuses:byte
+    public enum ConfirmStatuses : byte
     {
-        MailGonderilmedi=0,
-        MailGonderildiBeklemede=1,
-        Onaylandi=2,
-        Reddedildi=3
+        MailSendWaiting = 0,
+        MailSent = 1,
+        Commited = 2,
+        Rejected = 3
     }
 }

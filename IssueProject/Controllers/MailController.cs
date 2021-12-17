@@ -1,6 +1,8 @@
 ﻿using EmailService;
+using IssueProject.Entity.Context;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,25 +14,31 @@ namespace IssueProject.Controllers
     {
         private readonly IEmailSender _emailSender;
 
-        public MailController(IEmailSender emailSender)
+        private _2Mes_ConceptualContext _context;
+
+        public MailController(_2Mes_ConceptualContext context, IEmailSender emailSender)
         {
+            _context = context;
             _emailSender = emailSender;
+
+            //RecurringJob.AddOrUpdate("SendMailJob", () => JobMethod(), "* * * * *", TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"));
         }
 
         [HttpGet]
         public async Task MailMessage()
         {
-            string myvar = "<table width = '100%' cellspacing = '0' cellpadding = '0' ><tr> <td>";
-            myvar += "<table cellspacing = '0' cellpadding = '0'><tr><td style = 'border-radius: 2px; ' bgcolor = '#ED2939'>";
-            myvar += $"<a href =\" http://localhost:8080/Viewer/1\"";
-            myvar += " target = '_blank'";
-            myvar += "style = 'padding: 8px 12px; border: 1px solid #ED2939; border-radius: 2px; font-family: Helvetica, Arial, sans-serif;font-size: 14px; color: #FFFFFF; text-decoration: none;font-weight:bold;display: inline-block;'>";
-            myvar += "Maili Görüntüle </a></td></tr></table></td></tr></table>";
+            var vIssueConfirms = _context.IssueConfirms.Where(x => x.Status == 0).ToList();
 
-            var message = new Message(new string[] { "poyraz.celal97@gmail.com" }, "Test email async", myvar, null);
-            await _emailSender.SendEmailAsync(message);
+            foreach (var vIssueConfirm in vIssueConfirms)
+            {
+                var vUser = _context.Issues.Include(x => x.User).FirstOrDefault(x => x.UserId == vIssueConfirm.UserId);
+                var message = new Message(new string[] { vUser.User.EmailAddress }, "Test email ", vUser.User.FullName +
+                         " kişi tarafından Bilgilendirme Maili gönderilmiştir."
+                         , null);
+                //vIssueConfirm.Status = ConfirmStatuses.MailGonderildiBeklemede;
+                await _emailSender.SendEmailAsync(message);
+            }
         }
-
         [HttpPost]
         public async Task MailMessageWithFile()
         {

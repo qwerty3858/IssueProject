@@ -6,10 +6,7 @@ namespace IssueProject.Entity
 {
     public partial class User
     {
-        public User()
-        {
-            Issues = new HashSet<Issue>();
-        }
+         
 
         public int Id { get; set; }
         public int DepartmentId { get; set; }
@@ -18,9 +15,10 @@ namespace IssueProject.Entity
         public string Password { get; set; }
         public string EmailAddress { get; set; }
         public bool? Deleted { get; set; }
-
+        public bool IsManager { get; set; }
+        public bool IsKeyUser { get; set; }
         public virtual Department Department { get; set; }
         public virtual Role Role { get; set; }
-        public virtual ICollection<Issue> Issues { get; set; }
+        public virtual List<Issue> Issues { get; set; }
     }
 }

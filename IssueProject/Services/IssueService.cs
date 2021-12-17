@@ -2,9 +2,9 @@
 using IssueProject.Common;
 using IssueProject.Entity;
 using IssueProject.Entity.Context;
-using IssueProject.Enums.Confirm;
-using IssueProject.Enums.Issue;
+
 using IssueProject.Models.Issue;
+using IssueProject.Models.IssueActivityDetail;
 using IssueProject.Models.IssueComfirm;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -15,48 +15,200 @@ using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
+using AutoMapper;
+using IssueProject.Models.Title;
+using IssueProject.Models.SubTitle;
+using IssueProject.Models.Version;
 
 namespace IssueProject.Services
 {
     public class IssueService
     {
-        ILogger<IssueService> _logger;
+        private ILogger<IssueService> _logger;
 
-        IEmailSender _emailSender;
+        private IEmailSender _emailSender;
 
-        _2Mes_ConceptualContext _context;
-        public IssueService(_2Mes_ConceptualContext context, IEmailSender emailSender, ILogger<IssueService> logger)
+        private _2Mes_ConceptualContext _context;
+        IMapper _mapper;
+        public IssueService(_2Mes_ConceptualContext context, IEmailSender emailSender, ILogger<IssueService> logger, IMapper mapper)
         {
             _context = context;
             _emailSender = emailSender;
             _logger = logger;
+            _mapper = mapper;
 
         }
-
-        public async Task<Result<List<Issue>>> SelectedIssueById(int id)
+        public async Task<Result<List<TitleInfo>>> GetTitleInfo()
         {
             try
             {
-                var vIssues = await _context.Issues
-                            .Include(x => x.IssueActivitiys)
+                var vResult = await _context.IssueTitles.Select(x => new TitleInfo
+                {
+                    Id = x.Id,
+                    Subject = x.Subject
+                }).ToListAsync();
+                if (vResult == null)
+                {
+                    _logger.LogInformation("İstenilen Title için veri bulunamadı. ");
+                    return Result<List<TitleInfo>>.PrepareFailure("İstenilen Title veri bulunamadı.");
+                }
+                return Result<List<TitleInfo>>.PrepareSuccess(vResult);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogInformation($"Title Info List Error: {vEx.Message}");
+                return Result<List<TitleInfo>>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<IssueConfirm>> GetRejectReason(int IssueId)
+        {
+            try
+            {
+                var vResult = await _context.IssueConfirms.FirstOrDefaultAsync(x => x.IssueId == IssueId && x.Status == ConfirmStatuses.Rejected);
+
+                if (vResult == null)
+                {
+                    _logger.LogInformation("İstenilen Red Sebebi bulunamadı. ");
+                    return Result<IssueConfirm>.PrepareFailure("İstenilen Red Sebebi bulunamadı.");
+                }
+                return Result<IssueConfirm>.PrepareSuccess(vResult);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogInformation($"Reject Reason Info Error: {vEx.Message}");
+                return Result<IssueConfirm>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<List<SubTitleInfo>>> GetSubTitleInfo(int TitleId)
+        {
+            try
+            {
+                var vResult = await _context.IssueSubTitles.Where(x => x.TitleId == TitleId).Select(x => new SubTitleInfo
+                {
+                    Id = x.Id,
+                    SubTitle = x.SubTitle
+                }).ToListAsync();
+                return Result<List<SubTitleInfo>>.PrepareSuccess(vResult);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogInformation($"SubTitle Info List Error: {vEx.Message}");
+                return Result<List<SubTitleInfo>>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<List<VersionInfo>>> GetVersionInfoList(int IssueId)
+        {
+            try
+            {
+                var vIssue = await _context.Issues.FirstOrDefaultAsync(x => x.Id == IssueId);
+
+                var vVersionInfos = await _context.Issues.Where(x => x.IssueNo == vIssue.IssueNo).ToListAsync();
+
+                var VersionInfo = vVersionInfos.Select(x => new VersionInfo
+                {
+                    Id = x.Id,
+                    VersionNo = x.VersionNo,
+                    IssueNo = x.IssueNo
+                });
+               
+
+                //List<IssueInfo> issueInfo = _mapper.Map<List<IssueInfo>>(vVersonInfos);
+                return Result<List<VersionInfo>>.PrepareSuccess(VersionInfo.ToList());
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogInformation($"Version Info List Error: {vEx.Message}");
+                return Result<List<VersionInfo>>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<List<IssueInfo>>> GetVersionSelectedInfo(int IssueId)
+        {
+            try
+            {
+                var vVersonInfos = await _context.Issues
+                    .Include(x => x.IssueActivitiys)
+                      .ThenInclude(x => x.IssueActivitiyDetails)
+                      .Include(x => x.IssuePreconditions)
+                      .Include(x => x.IssueNotes)
+                      .Include(x => x.IssueRelevantDepartmants)
+                      .ThenInclude(x => x.Department)
+                      .Include(x => x.IssueAttachments)
+                      .Include(x => x.IssueRoles)
+                      .ThenInclude(x => x.Role) 
+                      .FirstOrDefaultAsync(x => x.Id == IssueId);
+                List<IssueInfo> issueInfo = _mapper.Map<List<IssueInfo>>(vVersonInfos);
+                return Result<List<IssueInfo>>.PrepareSuccess(issueInfo);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogInformation($"Version Info List Error: {vEx.Message}");
+                return Result<List<IssueInfo>>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<IssueInfo>> SelectedIssueById(int IssueId)
+        {
+            try
+            {
+                var vIssueActivitys = _context.IssueActivitiys.Include(x => x.IssueActivitiyDetails).Where(x => x.IssueId == IssueId).ToList();
+
+
+                List<IssueActivitiy> IssueActivitiys = new List<IssueActivitiy>();
+                foreach (var item in vIssueActivitys)
+                {
+                    var vIssueActivity = new IssueActivitiy
+                    {
+                        Type = item.Type,
+                        SubActivityNo = item.SubActivityNo,
+                        SubActivityTitle = item.SubActivityTitle,
+                        IssueActivitiyDetails = new List<IssueActivitiyDetail>()
+                    };
+
+
+                    foreach (var vSubItem in item.IssueActivitiyDetails.OrderBy(x => x.ParentId))
+                    {
+                        if (vSubItem.ParentId == null || vSubItem.ParentId == 0)
+                            vIssueActivity.IssueActivitiyDetails.Add(vSubItem);
+                        else
+                        {
+                            var vParentItem = vIssueActivity.IssueActivitiyDetails.FirstOrDefault(x => x.Id == vSubItem.ParentId);
+
+                            if (vParentItem.IssueActivitiyDetails.All(x => x.Id != vSubItem.Id))
+                                vParentItem.IssueActivitiyDetails.Add(vSubItem);
+                        }
+                    }
+
+                    // vIssueActivity.IssueActivitiyDetails = GetIssueActivitiyDetails(vIssueActivity, null, item.IssueActivitiyDetails);
+
+                    IssueActivitiys.Add(vIssueActivity);
+                }
+
+
+
+
+                var vIssue = await _context.Issues
                             .Include(x => x.IssuePreconditions)
-                            .Include(x => x.Department)
-                            .Include(x => x.User)
                             .Include(x => x.IssueNotes)
                             .Include(x => x.IssueRelevantDepartmants)
-                            .Where(x => x.Id == id)
-                           .ToListAsync();
-                if (vIssues == null)
+                            .ThenInclude(x => x.Department)
+                            .Include(x => x.IssueAttachments)
+                            .Include(x => x.IssueRoles)
+                            .ThenInclude(x => x.Role)
+                            .FirstOrDefaultAsync(x => x.Id == IssueId);
+
+                vIssue.IssueActivitiys = IssueActivitiys.ToList();
+                IssueInfo issueInfo = _mapper.Map<IssueInfo>(vIssue);
+
+                if (issueInfo == null)
                 {
                     _logger.LogInformation("İstenilen sorguya ait veri bulunamadı. ");
-                    return Result<List<Issue>>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
+                    return Result<IssueInfo>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
                 }
-                return Result<List<Issue>>.PrepareSuccess(vIssues);
+                return Result<IssueInfo>.PrepareSuccess(issueInfo);
             }
             catch (Exception vEx)
             {
                 _logger.LogInformation($"Selected List Error: {vEx.Message}");
-                return Result<List<Issue>>.PrepareFailure(vEx.Message);
+                return Result<IssueInfo>.PrepareFailure(vEx.Message);
             }
         }
         public async Task<Result> Upload(IFormFile file)
@@ -93,8 +245,11 @@ namespace IssueProject.Services
         {
             try
             {
-                var vIssues = await _context.Issues.Include(x => x.IssueRelevantDepartmants).Where(x => x.Deleted == false)
-
+                var vIssues = await _context.Issues
+                    .Include(x => x.Department)
+                    .Include(x => x.User)
+                    .ThenInclude(x => x.Role)
+                    .Where(x => x.Deleted == false)
                             .Select(x => new IssueSummary
                             {
                                 Id = x.Id,
@@ -103,13 +258,13 @@ namespace IssueProject.Services
                                 FullName = x.User.FullName,
                                 RoleName = x.User.Role.Definition,
                                 Status = ((int)x.Status),
-                                RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
-                                {
-                                     new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
-                                     {
-                                        DepartmentId = x.DepartmentId
-                                     }
-                                }
+                                //RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
+                                //{
+                                //     new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
+                                //     {
+                                //        DepartmentId = x.DepartmentId
+                                //     }
+                                //}
 
                             }).ToListAsync();
                 if (vIssues == null)
@@ -126,14 +281,16 @@ namespace IssueProject.Services
             }
         }
 
-        public async Task<Result<List<IssueSummary>>> GetListByUserId(string userId)
+        public async Task<Result<List<IssueSummary>>> GetListByUserId(int userId)
         {
             try
             {
                 var vIssues = await _context.Issues
                     .Include(x => x.IssueRelevantDepartmants)
                     .Include(x => x.Department)
-                    .Where(x => x.UserId.ToString() == userId && x.Deleted == false)
+                    .Include(x => x.User)
+                    .ThenInclude(x => x.Role)
+                    .Where(x => x.UserId == userId && x.Deleted == false)
                     .Select(x => new IssueSummary
                     {
                         Id = x.Id,
@@ -142,13 +299,7 @@ namespace IssueProject.Services
                         FullName = x.User.FullName,
                         RoleName = x.User.Role.Definition,
                         Status = ((int)x.Status),
-                        RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
-                        {
-                            new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
-                            {
-                                DepartmentId = x.DepartmentId
-                            }
-                        }
+                        Title = x.Title
                     }).ToListAsync();
                 if (vIssues == null)
                 {
@@ -163,36 +314,35 @@ namespace IssueProject.Services
                 return Result<List<IssueSummary>>.PrepareFailure(vEx.Message);
             }
         }
-        public async Task<Result<List<IssueSummary>>> GetListComeToMeIssues(string userId)
+        public async Task<Result<List<IssueSummary>>> GetListComeToMeIssues(int userId)
         {
             try
             {
-
-                var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id.ToString() == userId && x.Deleted == false);
+                var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == userId && x.Deleted == false);
                 if (vUser == null)
                 {
                     _logger.LogInformation("İstenilen sorguya ait veri bulunamadı. ");
                     return Result<List<IssueSummary>>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
                 }
 
-                var vIssues = await _context.Issues.Include(x => x.IssueRelevantDepartmants).Where(x => x.DepartmentId == vUser.DepartmentId)
+                var vIssues = await _context.IssueConfirms
+                    .Include(x => x.Issue)
+                    .ThenInclude(x => x.User)
+                    .ThenInclude(x => x.Role)
+                    .Where(x => x.Issue.Status != ActivityStatuses.Rejected && x.UserId == vUser.Id
+                                && (x.Status == ConfirmStatuses.MailSent || x.Status == ConfirmStatuses.MailSendWaiting))
                     .Select(x => new IssueSummary
                     {
-                        Id = x.Id,
-                        WorkArea = x.WorkArea,
-                        DepartmentName = x.Department.Definition,
-                        FullName = x.User.FullName,
-                        RoleName = x.User.Role.Definition,
-                        Status = ((int)x.Status),
-                        RelevantDepartmentId = new List<Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo>
-                        {
-                            new Models.IssueRelevantDepartMent.IssueRelevantDepartmentInfo
-                            {
-                                DepartmentId = x.DepartmentId
-                            }
-                        }
+                        Id = x.Issue.Id,
+                        WorkArea = x.Issue.WorkArea,
+                        DepartmentName = x.Issue.Department.Definition,
+                        FullName = x.Issue.User.FullName,
+                        RoleName = x.Issue.User.Role.Definition,
+                        Status = (int)x.Issue.Status,
+                        Title = x.Issue.Title
 
                     }).ToListAsync();
+
                 if (vIssues.Count == 0)
                 {
                     return Result<List<IssueSummary>>.PrepareFailure("Size Gelen Issue Bilgisi Bulunamadı.");
@@ -205,46 +355,45 @@ namespace IssueProject.Services
                 return Result<List<IssueSummary>>.PrepareFailure(vEx.Message);
             }
         }
-        public async Task<Result> Reject(int departmentId, string vUserId, string description)
+
+        public async Task<Result> Reject(int IssueId, int vUserId, string Description)
         {
             try
             {
-                var vIssues = await _context.Issues.Include(x => x.User)
-                    .FirstOrDefaultAsync(x => x.DepartmentId == departmentId && x.UserId.ToString() == vUserId);
+                var Issue = await _context.Issues
+                  .Include(x => x.IssueConfirms)
+                  .Include(x => x.User)
+                  .FirstOrDefaultAsync(x => x.Id == IssueId);
 
-                if (vIssues == null)
+                if (Issue == null)
                 {
-                    _logger.LogInformation("İstenilen sorguya ait veri bulunamadı. ");
-                    return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
+                    _logger.LogInformation("İstenilen Issue sorgusuna ait veri bulunamadı. ");
+                    return Result<Issue>.PrepareFailure("İstenilen Issue sorgusuna ait veri bulunamadı.");
                 }
-                vIssues.IssueConfirms.ForEach(x => new IssueConfirmInfo
+
+                if (Issue.Status == ActivityStatuses.Rejected || Issue.Status != ActivityStatuses.Processing)
                 {
-                    Status = Enums.Confirm.ConfirmStatuses.Reddedildi,
-                    Description = description,
-                    DepartmentId = departmentId,
-                    UserId = x.UserId,
-                    SubmitTime = DateTime.Now,
-
-                });
-                vIssues.Status = ActivityStatuses.RedYapilmayacak;
-
-
-                var message = new Message(new string[] { vIssues.User.EmailAddress }, "Talep Reddi ", vIssues.User.FullName +
-                " kişi tarafından Talep Reddedilme Maili gönderilmiştir.\n Açıklama : " + description
-                , null);
-                await _emailSender.SendEmailAsync(message);
-
-                if (message == null)
-                {
-                    _logger.LogInformation("Mail Gönderilemedi.");
-                    return Result<Issue>.PrepareFailure("Mail Gönderilemedi.");
+                    if (Issue.IssueConfirms.Any(y => y.UserId == vUserId && y.IsConfirm))
+                        return Result<Issue>.PrepareFailure("Reddetmek istediğiniz talep için izniniz bulunmamaktadır!");
                 }
-                vIssues.IssueConfirms.ForEach(x => new IssueConfirmInfo
+
+                foreach (var vConfirm in Issue.IssueConfirms)
                 {
-                    MailTime = DateTime.Now,
-                });
+
+                    if (vConfirm.UserId == vUserId)
+                    {
+                        vConfirm.IsConfirm = true;
+                        vConfirm.SubmitTime = DateTime.Now;
+                        vConfirm.Status = ConfirmStatuses.Rejected;
+                        vConfirm.Description = Description;
+                    }
+                }
+
+                Issue.Status = ActivityStatuses.Rejected;
+
                 await _context.SaveChangesAsync();
-                return Result<Issue>.PrepareSuccess(vIssues);
+
+                return Result<Issue>.PrepareSuccess(Issue);
             }
             catch (Exception vEx)
             {
@@ -259,155 +408,265 @@ namespace IssueProject.Services
             {
                 var Issue = await _context.Issues
                     .Include(x => x.User)
+                    .Include(x => x.IssueConfirms)
                     .Include(x => x.IssueRelevantDepartmants)
-                    .ThenInclude(x=>x.Department)
-                    .ThenInclude(x=>x.Users)
+                    .ThenInclude(x => x.Department)
+                    .ThenInclude(x => x.Users)
+                    .Include(x => x.Department)
+                    .ThenInclude(x => x.Users)
                     .FirstOrDefaultAsync(x => x.Id == IssueId);
 
                 if (Issue == null)
                     return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
 
-                if (Issue.IssueRelevantDepartmants.All(x => x.Department.Users.All(y => y.Id != UserId)))
-                    return Result<Issue>.PrepareFailure("Onaylamak istediğiniz madde için izniniz bulunmamaktadır!");
+                if (Issue.Status == ActivityStatuses.Rejected || Issue.Status != ActivityStatuses.Processing)
+                {
+                    if (Issue.IssueConfirms.Any(y => y.UserId == UserId && y.IsConfirm))
+                        return Result<Issue>.PrepareFailure("Onaylamak istediğiniz talep için izniniz bulunmamaktadır!");
+
+                    //if (Issue.IssueRelevantDepartmants.All(x => x.Department.Users.All(y => y.Id != UserId)))
+                    //    return Result<Issue>.PrepareFailure("Onaylamak istediğiniz madde için izniniz bulunmamaktadır!");
+                }
 
                 switch (Issue.Status)
                 {
-                    case ActivityStatuses.Calisiyor:
+                    case ActivityStatuses.Processing:
                         {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
+                            var vBimDepartment = await _context.Departments
+                               .Include(x => x.Users)
+                               .FirstOrDefaultAsync(x => x.Definition == "Bilgi İşlem");
+
+                            foreach (var vUser in vBimDepartment.Users)
                             {
-                                _context.IssueConfirms.Add(new IssueConfirm
+                                if (vUser.IsKeyUser)
                                 {
-                                      IssueId = IssueId,
-                                      VersionNo = 0,
-                                      DepartmentId = vDepartment.DepartmentId,
-                                      UserId = vUser.Id,
-                                      Status = ConfirmStatuses.MailGonderilmedi
-                                });
+                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    {
+                                        IssueId = IssueId,
+                                        VersionNo = Issue.VersionNo,
+                                        DepartmentId = vUser.DepartmentId,
+                                        UserId = vUser.Id,
+                                        Status = ConfirmStatuses.MailSendWaiting,
+                                        CreateTime = DateTime.Now,
+                                        SubmitTime = DateTime.Now,
+                                        IsConfirm = false,
+                                    });
+                                }
+
                             }
 
-                            Issue.Status = ActivityStatuses.BimOnayBekleme;
+
+                            Issue.Status = ActivityStatuses.ITWaiting;
                             break;
                         }
-                    case ActivityStatuses.BimOnayBekleme:
+                    case ActivityStatuses.ITWaiting:
                         {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
+                            foreach (var vConfirm in Issue.IssueConfirms.ToList())
+                            {
+                                if (vConfirm.UserId == UserId)
                                 {
-                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    vConfirm.Status = ConfirmStatuses.Commited;
+                                    vConfirm.IsConfirm = true;
+                                    vConfirm.SubmitTime = DateTime.Now;
+
+                                    var vHasWaitingCommit = Issue.IssueConfirms
+                                        .Any(x => x.UserId != UserId &&
+                                        (x.Status == ConfirmStatuses.MailSendWaiting || x.Status == ConfirmStatuses.MailSent));
+
+                                    if (!vHasWaitingCommit)
                                     {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.MailGonderildiBeklemede
-                                    });
+                                        foreach (var vDepartment in Issue.IssueRelevantDepartmants)
+                                            foreach (var vUser in vDepartment.Department.Users)
+                                            {
+                                                if (vUser.IsKeyUser)
+                                                {
+                                                    _context.IssueConfirms.Add(new IssueConfirm
+                                                    {
+                                                        IssueId = IssueId,
+                                                        VersionNo = Issue.VersionNo,
+                                                        DepartmentId = vDepartment.DepartmentId,
+                                                        UserId = vUser.Id,
+                                                        Status = ConfirmStatuses.MailSendWaiting,
+                                                        CreateTime = DateTime.Now,
+                                                        IsConfirm = false
+                                                    });
+                                                }
+                                            }
+
+                                        Issue.Status = ActivityStatuses.DepartmentWaiting;
+                                    }
                                 }
 
-                            Issue.Status = ActivityStatuses.BimOnay;
+                            }
                             break;
                         }
-                    case ActivityStatuses.BimOnay:
+                    case ActivityStatuses.DepartmentWaiting:
                         {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
+                            foreach (var vConfirm in Issue.IssueConfirms.ToList())
+                            {
+                                if (vConfirm.UserId == UserId)
                                 {
-                                    _context.IssueConfirms.Add(new IssueConfirm
+                                    vConfirm.Status = ConfirmStatuses.Commited;
+                                    vConfirm.IsConfirm = true;
+                                    vConfirm.SubmitTime = DateTime.Now;
+
+                                    var vHasWaitingCommit = Issue.IssueConfirms
+                                        .Any(x => x.UserId != UserId &&
+                                        (x.Status == ConfirmStatuses.MailSendWaiting || x.Status == ConfirmStatuses.MailSent));
+
+                                    if (!vHasWaitingCommit)
                                     {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.MailGonderildiBeklemede
-                                    });
-                                }
-                            Issue.Status = ActivityStatuses.DepartmanOnay;
-                            break;
-                        }
-                    case ActivityStatuses.DepartmanOnay:
-                        {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
-                                {
-                                    _context.IssueConfirms.Add(new IssueConfirm
-                                    {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.MailGonderildiBeklemede
-                                    });
+                                        foreach (var vUser in Issue.Department.Users)
+                                        {
+                                            if (vUser.IsManager)
+                                            {
+                                                _context.IssueConfirms.Add(new IssueConfirm
+                                                {
+                                                    IssueId = IssueId,
+                                                    VersionNo = Issue.VersionNo,
+                                                    DepartmentId = Issue.DepartmentId,
+                                                    UserId = vUser.Id,
+                                                    Status = ConfirmStatuses.MailSendWaiting,
+                                                    CreateTime = DateTime.Now,
+                                                    IsConfirm = false
+                                                });
+                                            }
+                                        }
+
+                                        Issue.Status = ActivityStatuses.ManagerWaiting;
+                                    }
                                 }
 
-                            Issue.Status = ActivityStatuses.YazanDepartmanAmirOnay;
+                            }
                             break;
                         }
-                    case ActivityStatuses.YazanDepartmanAmirOnay:
+                    case ActivityStatuses.ManagerWaiting:
                         {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
+                            foreach (var vConfirm in Issue.IssueConfirms)
+                            {
+                                if (vConfirm.UserId == UserId)
                                 {
-                                    _context.IssueConfirms.Add(new IssueConfirm
-                                    {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.MailGonderildiBeklemede
-                                    });
-                                }
-                            break;
-                        }
-                    case ActivityStatuses.Onaylandi:
-                        {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
-                                {
-                                    _context.IssueConfirms.Add(new IssueConfirm
-                                    {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.Onaylandi
-                                    });
-                                }
+                                    vConfirm.Status = ConfirmStatuses.Commited;
+                                    vConfirm.IsConfirm = true;
+                                    vConfirm.SubmitTime = DateTime.Now;
 
+                                    var vHasWaitingCommit = Issue.IssueConfirms
+                                          .Any(x => x.UserId != UserId &&
+                                          (x.Status == ConfirmStatuses.MailSendWaiting || x.Status == ConfirmStatuses.MailSent));
+
+                                    if (!vHasWaitingCommit)
+                                        Issue.Status = ActivityStatuses.ManagerCommitted;
+                                }
+                            }
                             break;
                         }
+                    /*
+                case ActivityStatuses.Rejected:
+                    {
+                        byte versionValue = 0;
+                        foreach (var vConfirm in Issue.IssueConfirms.ToList())
+                        {
+                            if (vConfirm.UserId == UserId)
+                            {
+                                vConfirm.Status = ConfirmStatuses.Commited;
+                                vConfirm.IsConfirm = true;
+                                vConfirm.SubmitTime = DateTime.Now;
+                                versionValue = vConfirm.VersionNo;
+                                foreach (var vUser in vBimDepartment.Users)
+                                {
+                                    if (vUser.IsKeyUser)
+                                    {
+                                        _context.IssueConfirms.Add(new IssueConfirm
+                                        {
+                                            IssueId = IssueId,
+                                            VersionNo = vConfirm.VersionNo,
+                                            DepartmentId = vUser.DepartmentId,
+                                            UserId = vUser.Id,
+                                            Status = ConfirmStatuses.MailSendWaiting,
+                                            CreateTime = DateTime.Now,
+                                            SubmitTime = DateTime.Now,
+                                            IsConfirm = false,
+                                        });
+                                    }
+
+                                }
+                                var vRevelantDepartment = issueInfo.IssueRelevantDepartmentInfos.Select(x => new IssueRelevantDepartmant
+                                {
+
+                                    DepartmentId = x.DepartmentId
+                                });
+                                var vPrecondition = issueInfo.IssuePreconditionInfos.Select(x => new IssuePrecondition
+                                {
+                                    LineNo = x.LineNo,
+                                    Explanation = x.Explanation
+                                });
+                                var vIssueNote = issueInfo.IssueNoteInfos.Select(x => new IssueNote
+                                {
+                                    LineNo = x.LineNo,
+                                    Explanation = x.Explanation
+                                });
+                                List<IssueActivitiy> vIssueActivitiys = new List<IssueActivitiy>();
+                                foreach (var vIssueActivityInfo in issueInfo.IssueActivitiyInfos)
+                                {
+                                    var vIssueActivity = new IssueActivitiy
+                                    {
+                                        Type = vIssueActivityInfo.Type,
+                                        SubActivityNo = vIssueActivityInfo.SubActivityNo,
+                                        SubActivityTitle = vIssueActivityInfo.SubActivityTitle
+                                    };
+
+                                    vIssueActivity.IssueActivitiyDetails = GetIssueActivitiyDetails(vIssueActivity, null, vIssueActivityInfo.IssueActivityDetailInfos);
+
+                                    vIssueActivitiys.Add(vIssueActivity);
+                                }
+                                var vIssueRole = issueInfo.IssueRoleInfos.Select(x => new IssueRole
+                                {
+                                    RoleId = (byte)(x.RoleId)
+                                });
+                                var vAttachment = issueInfo.IssueAttachmentInfos.Select(x => new IssueAttachment
+                                {
+                                    Deleted = false,
+                                    FileName = x.FileName,
+                                    UniqueName = Guid.NewGuid().ToString()
+                                });
+                                var vResult = new Issue
+                                {
+                                    //Id = issueInfo.Id,
+                                    WorkArea = issueInfo.WorkArea,
+                                    DepartmentId = Issue.DepartmentId,
+                                    UserId = (UserId),
+                                    IssueNo = (short)IssueId,
+                                    VersionNo = versionValue,
+                                    Title = issueInfo.Title,
+                                    Subtitle = issueInfo.Subtitle,
+                                    Summary = issueInfo.Summary,
+                                    Keywords = "",
+                                    Status = ActivityStatuses.ITWaiting,
+                                    Deleted = false,
+                                    IssueActivitiys = vIssueActivitiys.ToList(),
+                                    IssueNotes = vIssueNote.ToList(),
+                                    IssuePreconditions = vPrecondition.ToList(),
+                                    IssueRelevantDepartmants = vRevelantDepartment.ToList(),
+                                    //IssueRoles = vIssueRole.ToList(),
+                                    IssueAttachments = vAttachment.ToList(),
+
+                                };
+
+                                await _context.Issues.AddAsync(vResult);
+
+                            }
+
+                        }
+                        break;
+                    }
+                    */
                     default:
                         {
-                            foreach (var vDepartment in Issue.IssueRelevantDepartmants)
-                                foreach (var vUser in vDepartment.Department.Users)
-                                {
-                                    _context.IssueConfirms.Add(new IssueConfirm
-                                    {
-                                        IssueId = IssueId,
-                                        VersionNo = 0,
-                                        DepartmentId = vDepartment.DepartmentId,
-                                        UserId = vUser.Id,
-                                        Status = ConfirmStatuses.MailGonderilmedi,
-                                        
-                                    });
-                                }
-
-                            Issue.Status = ActivityStatuses.Kilitli;
+                            Issue.Status = ActivityStatuses.Locked;
                             break;
                         }
                 }
-              
-                var message = new Message(new string[] { Issue.User.EmailAddress }, "Test email ", Issue.User.FullName +
-                " kişi tarafından Bilgilendirme Maili gönderilmiştir."
-                , null);
-                await _emailSender.SendEmailAsync(message);
 
-                if (message == null)
-                {
-                    _logger.LogInformation("Mail Gönderilemedi.");
-                    return Result<Issue>.PrepareFailure("Mail Gönderilemedi.");
-                }
-             
                 await _context.SaveChangesAsync();
 
                 return Result<Issue>.PrepareSuccess(Issue);
@@ -420,122 +679,154 @@ namespace IssueProject.Services
 
         }
 
-        public async Task<Result<Issue>> AddIssue(IssueInfo issueInfo, string UserId)
+        public async Task<Result<Issue>> AddIssue(IssueInfo issueInfo, int UserId)
         {
             try
             {
-                var vUser = _context.Users.FirstOrDefault(x => x.Id.ToString() == UserId && x.Deleted == false);
+                var vUser = _context.Users.FirstOrDefault(x => x.Id == UserId && x.Deleted == false);
                 if (vUser == null)
                 {
                     return Result<Issue>.PrepareFailure("User Bulunamadı.");
                 }
-                var vSuperAdmin = _context.Users.Include(x => x.Role).FirstOrDefault(x => x.Role.Definition == "SuperAdmin" && x.Deleted == false);
-                if (vSuperAdmin == null)
-                {
-                    return Result<Issue>.PrepareFailure("Admin Bulunamadı.");
-                }
 
                 var vRevelantDepartment = issueInfo.IssueRelevantDepartmentInfos.Select(x => new IssueRelevantDepartmant
                 {
+                    DepartmentId = x.DepartmentId,
+                    
 
-                    DepartmentId = vUser.DepartmentId
                 });
 
                 var vPrecondition = issueInfo.IssuePreconditionInfos.Select(x => new IssuePrecondition
                 {
                     LineNo = x.LineNo,
-                    Explanation = x.Explanation
+                    Explanation = x.Explanation,
+                   
+
                 });
 
                 var vIssueNote = issueInfo.IssueNoteInfos.Select(x => new IssueNote
                 {
                     LineNo = x.LineNo,
-                    Explanation = x.Explanation
+                    Explanation = x.Explanation,
+                     
                 });
 
-                var vIssueActivity = issueInfo.IssueActivitiyInfos
-                    .Select(a => new IssueActivitiy
+                List<IssueActivitiy> vIssueActivitiys = new List<IssueActivitiy>();
+                foreach (var vIssueActivityInfo in issueInfo.IssueActivitiyInfos)
+                {
+                    var vIssueActivity = new IssueActivitiy
                     {
-                        Type = a.Type,
-                        SubActivityNo = a.SubActivityNo,
-                        SubActivityTitle = a.SubActivityTitle,
-                        IssueActivitiyDetails = a.IssueActivitiyDetailInfos
-                        .Select(x => new IssueActivitiyDetail
-                        {
-                            ParentId = 0,
-                            LineNo = x.LineNo,
-                            Definition = x.Definition,
-                            RoleId = vUser.RoleId,
-                            Medium = x.Medium,
+                        Type = vIssueActivityInfo.Type,
+                        SubActivityNo = vIssueActivityInfo.SubActivityNo,
+                        SubActivityTitle = vIssueActivityInfo.SubActivityTitle,
+                        
+                    };
 
-                            Explanation = x.Explanation,
-                            IssueActivityDetail = new List<IssueActivitiyDetail> { }
+                    vIssueActivity.IssueActivitiyDetails = GetIssueActivitiyDetails(vIssueActivity, null, vIssueActivityInfo.IssueActivityDetailInfos);
 
-                        }).ToList()
-
-                    });
+                    vIssueActivitiys.Add(vIssueActivity);
+                }
 
                 var vIssueRole = issueInfo.IssueRoleInfos.Select(x => new IssueRole
                 {
-                    RoleId = (byte)(x.RoleId)
+                    RoleId = (byte)(x.RoleId),
+                    
                 });
+
                 var vAttachment = issueInfo.IssueAttachmentInfos.Select(x => new IssueAttachment
                 {
                     Deleted = false,
                     FileName = x.FileName,
-                    UniqueName = Guid.NewGuid().ToString()
+                    UniqueName = Guid.NewGuid().ToString(),
+                    
                 });
 
-
-                var vResult = new Issue
+                if (issueInfo.Id > 0)
                 {
-                    //Id = issueInfo.Id,
-                    WorkArea = short.Parse(issueInfo.WorkArea),
-                    DepartmentId = vUser.DepartmentId,
-                    UserId = Int32.Parse(UserId),
-                    IssueNo = 1,
-                    VersionNo = 1,
-                    Title = issueInfo.Title,
-                    Subtitle = issueInfo.Subtitle,
-                    Summary = issueInfo.Summary,
-                    Keywords = "",
-                    Status = ActivityStatuses.BimOnayBekleme,
-                    Deleted = false,
-                    IssueActivitiys = vIssueActivity.ToList(),
-                    IssueNotes = vIssueNote.ToList(),
-                    IssuePreconditions = vPrecondition.ToList(),
-                    IssueRelevantDepartmants = vRevelantDepartment.ToList(),
-                    IssueRoles = vIssueRole.ToList(),
-                    IssueAttachments = vAttachment.ToList()
+                    var vIssue = _context.Issues
+                            .Include(x => x.IssueActivitiys)
+                            .ThenInclude(x => x.IssueActivitiyDetails)
+                            .Include(x => x.IssuePreconditions)
+                            //.ThenInclude(x => x.Issue)
+                            .Include(x => x.IssueNotes)
+                            .Include(x => x.IssueRelevantDepartmants)
+                            // .ThenInclude(x => x.Department)
+                            .Include(x => x.IssueAttachments)
+                            .Include(x => x.IssueRoles)
+                        //.ThenInclude(x => x.Role)
+                        .FirstOrDefault(x => x.Id == issueInfo.Id);
 
-                };
-
-                await _context.Issues.AddAsync(vResult);
-
-                await _context.SaveChangesAsync();
-
-                var message = new Message(new string[] { vSuperAdmin.EmailAddress }, "Test email ", vUser.FullName +
-                    " kişi tarafından Bilgilendirme Maili gönderilmiştir."
-                    , null);
-                await _emailSender.SendEmailAsync(message);
-
-                if (message == null)
-                {
-                    _logger.LogInformation("Mail Gönderilemedi.");
-                    return Result<Issue>.PrepareFailure("Mail Gönderilemedi.");
+                    if (vIssue == null)
+                    {
+                        return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
+                    }
+                    vIssue.WorkArea = issueInfo.WorkArea;
+                    //vIssue.DepartmentId = vUser.DepartmentId;
+                    //vIssue.UserId = (UserId);
+                    vIssue.IssueNo = (short)issueInfo.Id;
+                    vIssue.VersionNo = 0;
+                    vIssue.Title = issueInfo.Title;
+                    vIssue.Subtitle = issueInfo.Subtitle;
+                    vIssue.Summary = issueInfo.Summary;
+                    vIssue.Status = ActivityStatuses.Processing;
+                    vIssue.IssueActivitiys = vIssueActivitiys.ToList();
+                     vIssue.IssueNotes = vIssueNote.ToList();
+                    vIssue.IssuePreconditions = vPrecondition.ToList();
+                    vIssue.IssueRelevantDepartmants = vRevelantDepartment.ToList();
+                    vIssue.IssueRoles = vIssueRole.ToList();
+                    vIssue.IssueAttachments = vAttachment.ToList();
+                    await _context.SaveChangesAsync();
+                    if (issueInfo.Status == ActivityStatuses.Rejected && issueInfo.IsSaveWithConfirm)
+                    {
+                        vIssue.Id = 0;
+                        await _context.Issues.AddAsync(vIssue);
+                        await _context.SaveChangesAsync();
+                        await Confirm(vIssue.Id, UserId);
+                      
+                    }
+                    
+                    return Result<Issue>.PrepareSuccess(vIssue);
                 }
+                else
+                {
+                    var vResult = new Issue
+                    {
+                        Id = issueInfo.Id,
+                        WorkArea = issueInfo.WorkArea,
+                        DepartmentId = vUser.DepartmentId,
+                        UserId = (UserId),
+                        IssueNo = 0,
+                        VersionNo = 0,
+                        Title = issueInfo.Title,
+                        Subtitle = issueInfo.Subtitle,
+                        Summary = issueInfo.Summary,
+                        Keywords = "",
+                        Status = ActivityStatuses.Processing,
+                        Deleted = false,
+                        IssueActivitiys = vIssueActivitiys.ToList(),
+                        IssueNotes = vIssueNote.ToList(),
+                        IssuePreconditions = vPrecondition.ToList(),
+                        IssueRelevantDepartmants = vRevelantDepartment.ToList(),
+                        IssueRoles = vIssueRole.ToList(),
+                        IssueAttachments = vAttachment.ToList(),
 
-                return Result<Issue>.PrepareSuccess(vResult);
+                    };
+
+                    await _context.Issues.AddAsync(vResult);
+
+                    await _context.SaveChangesAsync();
+                    if (issueInfo.IsSaveWithConfirm)
+                        await Confirm(vResult.Id, UserId);
+                    return Result<Issue>.PrepareSuccess(vResult);
+                }
 
             }
             catch (Exception vEx)
             {
                 _logger.LogInformation($"Add Issue Error.{vEx.InnerException}");
                 return Result<Issue>.PrepareFailure($"Add Issue Error. {vEx.Message}");
-
             }
         }
-
 
         public async Task<Result<Issue>> DeleteIssue(int id)
         {
@@ -566,6 +857,61 @@ namespace IssueProject.Services
 
             }
         }
+        private List<IssueActivitiyDetail> GetIssueActivitiyDetails(IssueActivitiy activity, IssueActivitiyDetail parentNode, List<IssueActivitiyDetailInfo> nodes)
+        {
+            List<IssueActivitiyDetail> details = new List<IssueActivitiyDetail>();
+            foreach (var item in nodes)
+            {
+                var detail = new IssueActivitiyDetail
+                {
+                    LineNo = item.LineNo,
+                    Definition = item.Definition,
+                    RoleId = (byte)item.RoleId,
+                    Medium = item.Medium,
+                    Explanation = item.Explanation,
+                    Parent = parentNode,
+                    IssueActivitiy = activity
+                };
 
+                if (item.IssueActivityDetailInfos != null)
+                {
+                    if (item.IssueActivityDetailInfos.Count > 0)
+                        detail.IssueActivitiyDetails = GetIssueActivitiyDetails(activity, detail, item.IssueActivityDetailInfos);
+                }
+
+                details.Add(detail);
+            }
+
+            return details;
+        }
+
+
+        private List<IssueActivitiyDetail> GetIssueActivitiyDetails(IssueActivitiy activity, IssueActivitiyDetail parentNode, List<IssueActivitiyDetail> nodes)
+        {
+            List<IssueActivitiyDetail> details = new List<IssueActivitiyDetail>();
+            foreach (var item in nodes)
+            {
+                var detail = new IssueActivitiyDetail
+                {
+                    LineNo = item.LineNo,
+                    Definition = item.Definition,
+                    RoleId = (byte)item.RoleId,
+                    Medium = item.Medium,
+                    Explanation = item.Explanation,
+                    Parent = parentNode,
+                    IssueActivitiy = activity
+                };
+
+                if (item.IssueActivitiyDetails != null)
+                {
+                    if (item.IssueActivitiyDetails.Count > 0)
+                        detail.IssueActivitiyDetails = GetIssueActivitiyDetails(activity, detail, item.IssueActivitiyDetails);
+                }
+
+                details.Add(detail);
+            }
+
+            return details;
+        }
     }
 }

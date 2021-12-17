@@ -1,5 +1,8 @@
 using EmailService;
+using Hangfire;
 using IssueProject.Entity.Context;
+using IssueProject.Hangfire;
+using IssueProject.Hangfire.Interface;
 using IssueProject.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -14,6 +17,7 @@ using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
 using Serilog;
 using Serilog.Context;
+using System;
 using System.Globalization;
 using System.Text;
 
@@ -31,13 +35,21 @@ namespace IssueProject
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddHangfireServer();
 
-            services.AddDbContext<_2Mes_ConceptualContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContext<_2Mes_ConceptualContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
+                options.EnableSensitiveDataLogging(true);
+            });
+
             var emailConfig = Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
             services.AddHttpContextAccessor();
             services.AddSingleton(emailConfig);
+            services.AddAutoMapper(typeof(Startup));
             services.AddScoped<IEmailSender, EmailSender>();
-            
+           // services.AddTransient<IJob, JobManager>();
             services.AddScoped<AuthService>();
             services.AddScoped<UserService>();
             services.AddScoped<DepartmentService>();
@@ -122,7 +134,8 @@ namespace IssueProject
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
+            IServiceProvider serviceProvider)
         {
             if (env.IsDevelopment())
             {
@@ -137,6 +150,7 @@ namespace IssueProject
             }
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IssueProject v1"));
+            app.UseHangfireDashboard();
             app.UseSerilogRequestLogging();
 
             //app.UseHttpsRedirection();
@@ -151,7 +165,7 @@ namespace IssueProject
             app.UseRouting();
 
             app.UseCors("AllowSpecificOrigin");
-
+            
             app.UseAuthentication();
 
             app.UseAuthorization();
@@ -162,6 +176,9 @@ namespace IssueProject
             {
                 endpoints.MapControllers();
             });
+            //  RecurringJob.AddOrUpdate("SendMailJob", () => JobMethod(), "* * * * *", TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"));
+            JobManager.Create(serviceProvider);
+
         }
     }
 }

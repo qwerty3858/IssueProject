@@ -14,10 +14,20 @@ namespace IssueProject.FluentApiConfigurations
         {
 
             modelBuilder.ToTable("IssueActivitiy");
+           // modelBuilder.HasKey(a => a.Id);
+             
             modelBuilder.Property(e => e.SubActivityNo).HasComment("Sıra No");
             modelBuilder.Property(e => e.SubActivityTitle).HasMaxLength(256).IsUnicode(false);
             modelBuilder.Property(e => e.Type).HasDefaultValueSql("((1))").HasComment("1) Temel Aktivite\r\n2) Alternatif Aktivite\r\n3) İşlem İptal Aktivite");
-            modelBuilder.HasOne(d => d.Issue).WithMany(p => p.IssueActivitiys).HasForeignKey(d => d.IssueId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_Issue_IssueActivitiy_Id");
+
+            //modelBuilder.HasOne(d => d.Issue)
+            //    .WithMany(p => p.IssueActivitiys) 
+            //    .HasForeignKey(d => d.IssueId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_Issue_IssueActivitiy_Id");
+
+            //modelBuilder.HasMany(z => z.IssueActivitiyDetails)
+            //   .WithOne()
+            //   .HasForeignKey(z=> z.IssueActivitiyId);
+            //   //.HasForeignKey(d => d.IssueActivitiyId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_IssueActivitiy_IssueActivitiyDetail_");
 
         }
     }

@@ -37,7 +37,8 @@ namespace IssueProject.Services
                                DepartmentName = x.Department.Definition,
                                RoleName = x.Role.Definition,
                                FullName = x.FullName,
-                               EmailAddress = x.EmailAddress
+                               EmailAddress = x.EmailAddress,
+                               IsManager=x.IsManager
                            }).ToListAsync();
 
                 return Result<List<UserSummary>>.PrepareSuccess(vResult);
@@ -67,8 +68,9 @@ namespace IssueProject.Services
                     Password=x.Password,
                     EmailAddress = x.EmailAddress,
                     DepartmentName=x.Department.Definition,
-                    RoleName=x.Role.Definition
-
+                    RoleName=x.Role.Definition,
+                    IsManager = x.IsManager
+                    
                 })
                 .FirstOrDefaultAsync(x => x.Id == id );
 
@@ -85,6 +87,11 @@ namespace IssueProject.Services
         {
             try
             {
+                var vUserCount =await _context.Users.FirstOrDefaultAsync(x => x.Id == userInfo.Id);
+                if(vUserCount != null)
+                {
+                    return Result<User>.PrepareFailure($"{userInfo.Id}'ye Sahip Kullanıcı Zaten Mevcut!");
+                }
                 var vUser = new User
                 {
                     Id=userInfo.Id,
@@ -94,6 +101,8 @@ namespace IssueProject.Services
                     Password = userInfo.Password,
                     EmailAddress = userInfo.EmailAddress,
                     Deleted = false,
+                    IsManager=userInfo.IsManager,
+                    IsKeyUser = userInfo.IsKeyUser
 
                 };
 
@@ -124,6 +133,7 @@ namespace IssueProject.Services
                 vUser.Password = userInfo.Password;
                 vUser.EmailAddress = userInfo.EmailAddress;
                 vUser.Deleted = false;
+                vUser.IsManager = userInfo.IsManager;
 
                 await _context.SaveChangesAsync();
 

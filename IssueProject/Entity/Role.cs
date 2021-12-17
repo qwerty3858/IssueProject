@@ -11,7 +11,7 @@ namespace IssueProject.Entity
         public byte Id { get; set; }
         public string Definition { get; set; }
 
-        public virtual ICollection<IssueRole> IssueRoles { get; set; }
-        public virtual ICollection<User> Users { get; set; }
+        public virtual List<IssueRole> IssueRoles { get; set; }
+        public virtual List<User> Users { get; set; }
     }
 }

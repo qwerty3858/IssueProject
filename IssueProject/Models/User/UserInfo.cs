@@ -10,6 +10,8 @@
         public string RoleName { get; set; }
         public string Password { get; set; }
         public string EmailAddress { get; set; }
+        public bool IsManager { get; set; }
+        public bool IsKeyUser { get; set; }
        
     }
 }

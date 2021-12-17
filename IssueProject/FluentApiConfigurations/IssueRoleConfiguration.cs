@@ -15,11 +15,11 @@ namespace IssueProject.FluentApiConfigurations
 
             modelBuilder.ToTable("IssueRole");
 
-            modelBuilder.HasOne(d => d.Issue)
-                .WithMany(p => p.IssueRoles)
-                .HasForeignKey(d => d.IssueId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Issue_IssueRole_");
+            //modelBuilder.HasOne(d => d.Issue)
+            //    .WithMany(p => p.IssueRoles)
+            //    .HasForeignKey(d => d.IssueId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull)
+            //    .HasConstraintName("FK_Issue_IssueRole_");
 
             modelBuilder.HasOne(d => d.Role)
                 .WithMany(p => p.IssueRoles)

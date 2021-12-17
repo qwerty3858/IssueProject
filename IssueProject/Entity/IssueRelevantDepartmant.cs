@@ -1,4 +1,4 @@
-﻿#nullable disable
+﻿ 
 
 namespace IssueProject.Entity
 {
@@ -9,6 +9,6 @@ namespace IssueProject.Entity
         public int DepartmentId { get; set; }
 
         public virtual Department Department { get; set; }
-        public virtual Issue Issue { get; set; }
+        //public virtual Issue Issue { get; set; }
     }
 }

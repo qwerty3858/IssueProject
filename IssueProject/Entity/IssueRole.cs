@@ -8,7 +8,7 @@ namespace IssueProject.Entity
         public int IssueId { get; set; }
         public byte RoleId { get; set; }
 
-        public virtual Issue Issue { get; set; }
+        //public virtual Issue Issue { get; set; }
         public virtual Role Role { get; set; }
     }
 }

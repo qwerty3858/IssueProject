@@ -21,11 +21,11 @@ namespace IssueProject.FluentApiConfigurations
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Department_IssueRelevantDepartmant_");
 
-            modelBuilder.HasOne(d => d.Issue)
-                .WithMany(p => p.IssueRelevantDepartmants)
-                .HasForeignKey(d => d.IssueId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Issue_IssueRelevantDepartmant_");
+            //modelBuilder.HasOne(d => d.Issue)
+            //    .WithMany(p => p.IssueRelevantDepartmants)
+            //    .HasForeignKey(d => d.IssueId)
+            //    .OnDelete(DeleteBehavior.ClientSetNull)
+            //    .HasConstraintName("FK_Issue_IssueRelevantDepartmant_");
 
         }
     }

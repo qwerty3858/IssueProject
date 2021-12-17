@@ -24,11 +24,7 @@ namespace IssueProject.FluentApiConfigurations
 
             modelBuilder.Property(e => e.LineNo).HasComment("Satır No");
 
-            modelBuilder.HasOne(d => d.Issue)
-                .WithMany(p => p.IssuePreconditions)
-                .HasForeignKey(d => d.IssueId)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Issue_IssuePrecondition_");
+           
 
         }
     }
