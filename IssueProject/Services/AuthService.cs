@@ -138,7 +138,7 @@ namespace IssueProject.Services
             }
             catch(Exception vEx)
             {
-                _logger.LogInformation($"Auth Login Error: {vEx.Message}");
+                _logger.LogError(vEx, "Auth Login Error");
                 return Result<LoginInfo>.PrepareFailure(vEx.Message);
             }
            

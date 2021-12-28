@@ -26,7 +26,6 @@ namespace IssueProject.Services
         {
             try
             {
-
                 var vResult = await _context.Users
                            .Where(x => x.Deleted == false)
                            .Include(x => x.Department)
@@ -38,7 +37,8 @@ namespace IssueProject.Services
                                RoleName = x.Role.Definition,
                                FullName = x.FullName,
                                EmailAddress = x.EmailAddress,
-                               IsManager=x.IsManager
+                               IsManager=x.IsManager,
+                               IsKeyUser = x.IsKeyUser
                            }).ToListAsync();
 
                 return Result<List<UserSummary>>.PrepareSuccess(vResult);
@@ -46,7 +46,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Users List Error: {vEx.Message}");
+                _logger.LogError(vEx, "Users List Error");
                 return Result<List<UserSummary>>.PrepareFailure(vEx.Message);
 
             }
@@ -78,7 +78,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-
+                _logger.LogError(vEx, "User Info Error");
                 return Result<UserInfo>.PrepareFailure(vEx.Message);
             }
         }
@@ -113,7 +113,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Users Add Error: {vEx.Message}");
+                _logger.LogError(vEx, "User Add Error");
                 return Result<User>.PrepareFailure(vEx.Message);
             }
         }
@@ -141,7 +141,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Users Update Error: {vEx.Message}");
+                _logger.LogError(vEx, "User Update Error");
                 return Result<User>.PrepareFailure(vEx.Message);
 
             }
@@ -164,7 +164,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Users Delete Error: {vEx.Message}");
+                _logger.LogError(vEx, "User Delete Error");
                 return Result<User>.PrepareFailure(vEx.Message);
             }
 

@@ -23,15 +23,13 @@ namespace IssueProject.FluentApiConfigurations
             
                 modelBuilder.Property(e => e.Status).HasComment("0) Çalışılıyor\r\n1) BIM Onay Bekleme\r\n2) BİM Onay\r\n3) Departman Onay\r\n4) Yazan Departman Amir Onay\r\n5) Kilitli\r\n9) Red/Yapılmayacak");
           
-                modelBuilder.Property(e => e.Subtitle).HasMaxLength(256).IsUnicode(false).HasComment("Alt başlık");
            
                 modelBuilder.Property(e => e.Summary).IsRequired().HasMaxLength(1024).IsUnicode(false).HasComment("Kısa açıklama");
          
-                modelBuilder.Property(e => e.Title).IsRequired().HasMaxLength(256).IsUnicode(false).HasComment("Başlık");
          
                 modelBuilder.Property(e => e.UserId).HasComment("Kullanıcı Id");
              
-                modelBuilder.Property(e => e.WorkArea).HasMaxLength(50).IsUnicode(false).HasComment("Üretim Yeri 550/552");
+                //modelBuilder.Property(e => e.WorkArea).HasMaxLength(50).IsUnicode(false).HasComment("Üretim Yeri 550/552");
                 
                 modelBuilder.HasOne(d => d.Department).WithMany(p => p.Issues).HasForeignKey(d => d.DepartmentId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("FK_Department_Issue_");
                 

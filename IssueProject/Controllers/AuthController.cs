@@ -29,7 +29,7 @@ namespace IssueProject.Controllers
           
                 var vLogin = await _authService.AuthForLogIn(loginQuery);
                 if(vLogin == null)
-                    _logger.LogInformation("Login İşlemi Başarısız. ");
+                    _logger.LogError("Login İşlemi Başarısız. ");
                 return Ok(vLogin);
 
            

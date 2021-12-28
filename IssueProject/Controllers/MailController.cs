@@ -36,7 +36,8 @@ namespace IssueProject.Controllers
                          " kişi tarafından Bilgilendirme Maili gönderilmiştir."
                          , null);
                 //vIssueConfirm.Status = ConfirmStatuses.MailGonderildiBeklemede;
-                await _emailSender.SendEmailAsync(message);
+                MessageIsSend checkMail = new MessageIsSend();
+                await _emailSender.SendEmailAsync(message, checkMail);
             }
         }
         [HttpPost]
@@ -45,7 +46,8 @@ namespace IssueProject.Controllers
             var files = Request.Form.Files.Any() ? Request.Form.Files : new FormFileCollection();
 
             var message = new Message(new string[] { "poyraz.celal97@gmail.com" }, "Test mail with Attachments", "This is the content from our mail with attachments.", files);
-            await _emailSender.SendEmailAsync(message);
+            MessageIsSend checkMail = new MessageIsSend();
+            await _emailSender.SendEmailAsync(message, checkMail);
         }
     }
 }

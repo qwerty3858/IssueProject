@@ -14,7 +14,7 @@ namespace IssueProject.FluentApiConfigurations
         {
             entity.ToTable("IssueSubTitle");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
+            //entity.Property(e => e.Id).ValueGeneratedNever();
 
             entity.Property(e => e.SubTitle)
                         .IsRequired()

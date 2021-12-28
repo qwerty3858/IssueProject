@@ -3,16 +3,21 @@ using System.IO;
 using System.Linq;
 using MailKit.Net.Smtp;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using System;
+using MailKit.Security;
 
 namespace EmailService
 {
     public class EmailSender:IEmailSender
     {
         private readonly EmailConfiguration _emailConfig;
+        private ILogger<EmailSender> _logger;
 
-        public EmailSender(EmailConfiguration emailConfig)
+        public EmailSender(EmailConfiguration emailConfig, ILogger<EmailSender> logger)
         {
             _emailConfig = emailConfig;
+            _logger = logger;
         }
 
         public void SendEmail(Message message)
@@ -21,10 +26,10 @@ namespace EmailService
             Send(emailMessage);
         }
 
-        public async Task SendEmailAsync(Message message)
+        public async Task SendEmailAsync(Message message,MessageIsSend checkMail)
         {
             var mailMessage = CreateMailMessage(message);
-            await SendAsync(mailMessage);
+            await SendAsync(mailMessage, checkMail);
         }
 
         private MimeMessage CreateMailMessage(Message message)
@@ -61,16 +66,16 @@ namespace EmailService
             {
                 try
                 {
-                    client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, true);
+                    client.Connect(_emailConfig.SmtpServer, _emailConfig.Port, SecureSocketOptions.StartTls);
                     client.AuthenticationMechanisms.Remove("XOAUTH2");
                     client.Authenticate(_emailConfig.UserName, _emailConfig.Password);
 
                     client.Send(mailMessage);
                 }
-                catch
+                catch(Exception vEx)
                 {
                     //log error message exception
-                    throw;
+                    _logger.LogError(vEx, "Mail Gönderilirken Hata");
 
                 }
                 finally
@@ -81,7 +86,7 @@ namespace EmailService
             }
         }
 
-        private async Task SendAsync(MimeMessage mailMessage)
+        private async Task SendAsync(MimeMessage mailMessage,MessageIsSend checkMail)
         {
             using (var client = new SmtpClient())
             {
@@ -92,11 +97,14 @@ namespace EmailService
                     await client.AuthenticateAsync(_emailConfig.UserName, _emailConfig.Password);
 
                     await client.SendAsync(mailMessage);
+                    checkMail.IsSend = true;
                 }
-                catch
+                catch(Exception vEx)
                 {
                     //log an error message or throw an exception, or both.
-                    throw;
+                    _logger.LogError(vEx,"Mail Gönderilirken Hata");
+                    checkMail.IsSend = false;
+                     
                 }
                 finally
                 {

@@ -2,6 +2,7 @@
 using IssueProject.Entity.Context;
 using IssueProject.Models.Role;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,10 +13,12 @@ namespace IssueProject.Services
     public class RoleService
     {
         _2Mes_ConceptualContext _context;
+        private ILogger<RoleService> _logger;
 
-        public RoleService(_2Mes_ConceptualContext context)
+        public RoleService(_2Mes_ConceptualContext context, ILogger<RoleService> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         
@@ -23,7 +26,7 @@ namespace IssueProject.Services
         {
             try
             {
-                var vResult = await _context.Roles.Where(x=>x.Id>2).Select(x => new RoleInfo
+                var vResult = await _context.Roles.Select(x => new RoleInfo
                 {
                     Id = x.Id,
                     Definition = x.Definition
@@ -34,7 +37,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-
+                _logger.LogError(vEx, "Role List Error");
                 return Result<List<RoleInfo>>.PrepareFailure(vEx.Message);
             }
         }

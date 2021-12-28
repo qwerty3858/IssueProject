@@ -8,5 +8,6 @@
         public string FullName { get; set; }
         public string EmailAddress { get; set; }
         public bool IsManager { get; set; }
+        public bool IsKeyUser { get; set; }
     }
 }

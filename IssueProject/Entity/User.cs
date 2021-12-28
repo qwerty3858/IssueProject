@@ -14,7 +14,7 @@ namespace IssueProject.Entity
         public string FullName { get; set; }
         public string Password { get; set; }
         public string EmailAddress { get; set; }
-        public bool? Deleted { get; set; }
+        public bool Deleted { get; set; }
         public bool IsManager { get; set; }
         public bool IsKeyUser { get; set; }
         public virtual Department Department { get; set; }

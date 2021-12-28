@@ -10,13 +10,13 @@ namespace IssueProject.Entity
        
 
         public int Id { get; set; }
-        public string WorkArea { get; set; }
+        //public string WorkArea { get; set; }
         public int DepartmentId { get; set; }
         public int UserId { get; set; }
         public short IssueNo { get; set; }
         public byte VersionNo { get; set; }
-        public string Title { get; set; }
-        public string Subtitle { get; set; }
+        public int TitleId { get; set; }
+        public int? SubtitleId { get; set; }
         public string Summary { get; set; }
         public string Keywords { get; set; }
         public ActivityStatuses Status { get; set; }
@@ -31,7 +31,9 @@ namespace IssueProject.Entity
         public virtual List<IssuePrecondition> IssuePreconditions { get; set; }
         public virtual List<IssueRelevantDepartmant> IssueRelevantDepartmants { get; set; }
         public virtual List<IssueRole> IssueRoles { get; set; }
-        public virtual List<IssueTitle> IssueTitles { get; set; }
+       public virtual IssueTitle Title { get; set; }
+       public virtual IssueSubTitle Subtitle { get; set; }
+
     }
 
     

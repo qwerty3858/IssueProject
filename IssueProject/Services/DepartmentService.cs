@@ -27,18 +27,18 @@ namespace IssueProject.Services
         {
             try
             {
-                var vResult = await _context.Departments.Where(x=>x.Id>1).Select(x => new DepartmentInfo
+                var vResult = await _context.Departments.Select(x => new DepartmentInfo
                 {
                     Id = x.Id,
                     Definition = x.Definition
 
-                }).ToListAsync();
+                }).OrderBy(x=>x.Definition).ToListAsync();
 
                 return Result<List<DepartmentInfo>>.PrepareSuccess(vResult);
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Department List Error: {vEx.Message}");
+                _logger.LogError(vEx, "Department List Error");
                 return Result<List<DepartmentInfo>>.PrepareFailure(vEx.Message);
             }
         }
@@ -58,7 +58,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Department Add Error: {vEx.Message}");
+                _logger.LogError(vEx, "Department Add Error");
                 return Result<Department>.PrepareFailure(vEx.Message);
             }
         }
@@ -82,7 +82,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Department Update Error: {vEx.Message}");
+                _logger.LogError(vEx, "Department Update Error"); 
                 return Result<Department>.PrepareFailure(vEx.Message);
             }
         }
@@ -102,7 +102,7 @@ namespace IssueProject.Services
             }
             catch (Exception vEx)
             {
-                _logger.LogInformation($"Department Delete Error: {vEx.Message}");
+                _logger.LogError(vEx, "Department Delete Error");
                 return Result<Department>.PrepareFailure(vEx.Message);
             }
         }

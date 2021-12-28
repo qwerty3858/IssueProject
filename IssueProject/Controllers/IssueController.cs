@@ -1,10 +1,15 @@
 ﻿using IssueProject.Common;
 using IssueProject.Models.Issue;
 using IssueProject.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Web;
+using System.IO;
+using IssueProject.Models.SubTitle;
 
 namespace IssueProject.Controllers
 {
@@ -76,11 +81,23 @@ namespace IssueProject.Controllers
             var vResult = await _issueService.AddIssue(issueInfo, vUserId);
             return Ok(vResult);
         }
-
-        [HttpGet("TitleInfo")]
-        public async Task<IActionResult> TitleInfo()
+        [HttpPost("AddSubtitle")]
+        public async Task<IActionResult> AddSubTitle(SubTitleInfo subtitleInfo)
         {
-            var vResult = await _issueService.GetTitleInfo();
+            var vResult = await _issueService.AddSubtitle(subtitleInfo);
+            return Ok(vResult);
+        }
+        [HttpGet("TitleInfoByDepartmentId/{DepartmentId}")]
+        public async Task<IActionResult> TitleInfoByDepartmentId(int DepartmentId)
+        {
+            var vResult = await _issueService.GetTitleInfoByDepartmentId(DepartmentId);
+            return Ok(vResult);
+        }
+        [HttpGet("TitleInfo/{TitleControl}")]
+        public async Task<IActionResult> TitleInfo(bool TitleControl)
+        {
+            int vUserId = User.GetSubject<int>();
+            var vResult = await _issueService.GetTitleInfo(vUserId,TitleControl);
             return Ok(vResult);
         }
         [HttpGet("RejectReason/{issueId}")]
@@ -108,12 +125,11 @@ namespace IssueProject.Controllers
         [HttpPost("Upload"), DisableRequestSizeLimit]
         public async Task<IActionResult> FileUpload()
         {
-            // string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
-            var file = Request.Form.Files[0];
-            var vResult = await _issueService.Upload(file);
+            List<IFormFile> files = (List<IFormFile>)Request.Form.Files;
+            var vResult = await _issueService.Upload(files);
             return Ok(vResult);
         }
-
+    
         [HttpPost("Reject")]
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Rejection(ConfirmModel confirmModel)
@@ -124,10 +140,10 @@ namespace IssueProject.Controllers
             return Ok(vResult);
         }
          
-        [HttpDelete("Delete")]
-        public async Task<IActionResult> DeleteIssue(int id)
+        [HttpDelete("Delete/{Id}")]
+        public async Task<IActionResult> DeleteIssue(int Id)
         {
-            var vResult = await _issueService.DeleteIssue(id);
+            var vResult = await _issueService.DeleteIssue(Id);
             return Ok(vResult);
         }
 

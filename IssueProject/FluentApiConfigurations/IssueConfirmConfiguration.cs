@@ -28,14 +28,16 @@ namespace IssueProject.FluentApiConfigurations
             modelBuilder.Property(e => e.Status).HasComment("0) Mail Gönderilmedi\r\n1) Mail Gönderildi Beklemede\r\n2) Onaylandı\r\n3) Reddedildi");
 
             modelBuilder.Property(e => e.SubmitTime).HasColumnType("datetime");
-            modelBuilder.Property(e => e.IsConfirm); 
-            modelBuilder.Property(e => e.IsCreated); 
+            modelBuilder.Property(e => e.IsConfirm);
+            modelBuilder.Property(e => e.IsRejectSend);
+            modelBuilder.Property(e => e.IsCommited);
 
             modelBuilder.HasOne(d => d.Issue)
                 .WithMany(p => p.IssueConfirms)
                 .HasForeignKey(d => d.IssueId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Issue_IssueHistory_");
+             
 
         }
     }

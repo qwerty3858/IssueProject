@@ -3,6 +3,7 @@ using Hangfire;
 using IssueProject.Common;
 using IssueProject.Entity.Context;
 using IssueProject.Hangfire.Interface;
+using IssueProject.Models.RejectReason;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -22,52 +23,84 @@ namespace IssueProject.Hangfire
         {
             _context = context;
             _emailSender = emailSender;
-             
+
         }
         public static void Create(IServiceProvider provider)
         {
             var _context = provider.GetService(typeof(_2Mes_ConceptualContext));
             var _emailSender = provider.GetService(typeof(IEmailSender));
 
-            JobManager jobManager = new JobManager((_2Mes_ConceptualContext)_context,(IEmailSender)_emailSender);
+            JobManager jobManager = new JobManager((_2Mes_ConceptualContext)_context, (IEmailSender)_emailSender);
             jobManager.recurringJobManager = new RecurringJobManager();
-            
+
             jobManager.recurringJobManager.AddOrUpdate(
             "SendMail",
             () => jobManager.JobMethod(),
-            "*/5 * * * *", TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time")
+            //*/59 */7 * * *
+            "*/1 * * * *", TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time")
             );
         }
         public async Task JobMethod()
         {
-            var vIssueConfirms =await _context.IssueConfirms.Where(x => x.Status == ConfirmStatuses.MailSendWaiting /*|| x.Status == ConfirmStatuses.Reddedildi*/).ToListAsync();
-            if(vIssueConfirms != null)
+            var vIssueConfirms = await _context.IssueConfirms.Where(x => x.Status == ConfirmStatuses.MailSendWaiting
+            || x.Status == ConfirmStatuses.Rejected || x.Status == ConfirmStatuses.Commited).ToListAsync();
+            if (vIssueConfirms != null)
             {
                 foreach (var vIssueConfirm in vIssueConfirms)
                 {
-                    var vUser =await _context.Users.FirstOrDefaultAsync(x => x.Id == vIssueConfirm.UserId);
+                    var vUser = await _context.Users.FirstOrDefaultAsync(x => x.Id == vIssueConfirm.UserId);
                     if (vUser != null)
                     {
-                        //if(vIssueConfirm.Status == ConfirmStatuses.MailGonderilmedi)
-                        //{
                         vIssueConfirm.MailTime = DateTime.Now;
-                        var message = new Message(new string[] { vUser.EmailAddress }, "Test email ", vUser.FullName +
-                            " kişi tarafından Talep Bilgilendirme Maili gönderilmiştir."
+                        if (vIssueConfirm.Status == ConfirmStatuses.Rejected && vIssueConfirm.IsRejectSend)
+                        {
+                            var vUserForRejected = await _context.Issues.Include(x => x.User).FirstOrDefaultAsync(x => x.Id == vIssueConfirm.IssueId);
+                            var messageReject = new Message(new string[] { vUserForRejected.User.EmailAddress }, "Talep Reddi ", vUser.FullName +
+                            "  tarafından Talep Reddedilme Maili gönderilmiştir.\n Açıklama : " + vIssueConfirm.Description
                             , null);
-                        vIssueConfirm.Status = ConfirmStatuses.MailSent;
-                        _context.SaveChanges();
-                        await _emailSender.SendEmailAsync(message);
-                        //}
-                        //else
-                        //{
-                        //    vIssueConfirm.MailTime = DateTime.Now;
-                        //    var messageReject = new Message(new string[] { vUser.EmailAddress }, "Talep Reddi ", vUser.FullName +
-                        // " kişi tarafından Talep Reddedilme Maili gönderilmiştir.\n Açıklama : " + vIssueConfirm.Description
-                        // , null);
-                        //    vIssueConfirm.Status = ConfirmStatuses.MailGonderildiBeklemede;
-                        //    _context.SaveChanges();
-                        //    await _emailSender.SendEmailAsync(messageReject);
-                        //}
+                            //vIssueConfirm.Status = ConfirmStatuses.MailSent;
+                            MessageIsSend checkMail = new MessageIsSend();
+                            await _emailSender.SendEmailAsync(messageReject, checkMail);
+                            if (checkMail.IsSend)
+                            {
+                                vIssueConfirm.IsRejectSend = false;
+                                _context.SaveChanges();
+                            }
+                            
+                        }
+                        else if (vIssueConfirm.Status == ConfirmStatuses.Commited && vIssueConfirm.IsCommited)
+                        {
+                            var vUserForCommited = await _context.Issues.Include(x => x.User).FirstOrDefaultAsync(x=>x.Id == vIssueConfirm.IssueId);
+                            var message = new Message(new string[] { vUserForCommited.User.EmailAddress }, "Talep Onay ", vUser.FullName +
+                            "  tarafından Talep Onaylama Bilgilendirme Maili gönderilmiştir."
+                            , null);
+                            // vIssueConfirm.Status = ConfirmStatuses.MailSent;
+
+                            MessageIsSend checkMail = new MessageIsSend();
+                            await _emailSender.SendEmailAsync(message, checkMail);
+                            if (checkMail.IsSend)
+                            {
+                                vIssueConfirm.IsCommited = false;
+                                _context.SaveChanges();
+                            }
+                           
+                        }
+                        else if (vIssueConfirm.Status == ConfirmStatuses.MailSendWaiting)
+                        {
+                            var message = new Message(new string[] { vUser.EmailAddress }, "Talep Formu ", vUser.FullName +
+                            "  tarafından Talep Bilgilendirme Maili gönderilmiştir."
+                            , null);
+                            MessageIsSend checkMail = new MessageIsSend() ;
+                            await _emailSender.SendEmailAsync(message, checkMail);
+                            if (checkMail.IsSend)
+                            {
+                                vIssueConfirm.Status = ConfirmStatuses.MailSent;
+                                _context.SaveChanges();
+                            }
+                            
+                        }
+
+                      
 
 
                     }
@@ -76,7 +109,7 @@ namespace IssueProject.Hangfire
 
                 }
             }
-            
+
         }
     }
 }
