@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Web;
 using System.IO;
 using IssueProject.Models.SubTitle;
+using IssueProject.Models.Title;
 
 namespace IssueProject.Controllers
 {
@@ -87,6 +88,24 @@ namespace IssueProject.Controllers
             var vResult = await _issueService.AddSubtitle(subtitleInfo);
             return Ok(vResult);
         }
+        [HttpPost("AddTitle")]
+        public async Task<IActionResult> AddTitle(TitleInfo titleInfo)
+        {
+            var vResult = await _issueService.AddTitle(titleInfo);
+            return Ok(vResult);
+        }
+        [HttpPut("UpdateSubtitle")]
+        public async Task<IActionResult> UpdateSubtitle(SubtitleSummary subtitleSummary)
+        {
+            var vResult = await _issueService.UpdateSubtitle(subtitleSummary);
+            return Ok(vResult);
+        }
+        [HttpPut("UpdateTitle")]
+        public async Task<IActionResult> UpdateTitle(SubtitleSummary subtitleSummary)
+        {
+            var vResult = await _issueService.UpdateTitle(subtitleSummary);
+            return Ok(vResult);
+        }
         [HttpGet("TitleInfoByDepartmentId/{DepartmentId}")]
         public async Task<IActionResult> TitleInfoByDepartmentId(int DepartmentId)
         {
@@ -98,6 +117,18 @@ namespace IssueProject.Controllers
         {
             int vUserId = User.GetSubject<int>();
             var vResult = await _issueService.GetTitleInfo(vUserId,TitleControl);
+            return Ok(vResult);
+        }
+        [HttpGet("GetAllSubtitleInfo")]
+        public async Task<IActionResult> GetAllSubtitleInfo()
+        {
+            var vResult = await _issueService.GetAllSubtitleInfo();
+            return Ok(vResult);
+        }
+        [HttpGet("GetAllTitleInfo")]
+        public async Task<IActionResult> GetAllTitleInfo()
+        {
+            var vResult = await _issueService.GetAllTitleInfo();
             return Ok(vResult);
         }
         [HttpGet("RejectReason/{issueId}")]
@@ -129,7 +160,20 @@ namespace IssueProject.Controllers
             var vResult = await _issueService.Upload(files);
             return Ok(vResult);
         }
-    
+        [HttpDelete("DeleteSubtitle/{Id}")]
+        public IActionResult DeleteSubtitle(int Id)
+        {
+
+            var vResult = _issueService.DeleteSubtitle(Id);
+            return Ok(vResult);
+        }
+        [HttpDelete("DeleteFile/{fileInfo}/{Id}"),DisableRequestSizeLimit]
+        public IActionResult DeleteFile(string fileInfo,int Id)
+        {
+            
+            var vResult = _issueService.DeleteFile(fileInfo, Id);
+            return Ok(vResult);
+        }
         [HttpPost("Reject")]
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Rejection(ConfirmModel confirmModel)

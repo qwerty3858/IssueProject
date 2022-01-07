@@ -16,6 +16,6 @@ namespace IssueProject.Entity
         //public int IssueId { get; set; }
         public virtual Department Department { get; set; }
         //public virtual Issue Issue { get; set; }
-        public virtual List<IssueSubTitle> IssueSubTitles { get; set; }
+        public virtual List<IssueSubTitle> IssueSubTitles { get; set; } 
     }
 }

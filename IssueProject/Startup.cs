@@ -4,6 +4,7 @@ using IssueProject.Entity.Context;
 using IssueProject.Hangfire;
 using IssueProject.Hangfire.Interface;
 using IssueProject.Services;
+using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
@@ -30,7 +31,7 @@ namespace IssueProject
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; } 
+        public IConfiguration Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -49,7 +50,7 @@ namespace IssueProject
             services.AddSingleton(emailConfig);
             services.AddAutoMapper(typeof(Startup));
             services.AddScoped<IEmailSender, EmailSender>();
-           // services.AddTransient<IJob, JobManager>();
+            // services.AddTransient<IJob, JobManager>();
             services.AddScoped<AuthService>();
             services.AddScoped<UserService>();
             services.AddScoped<DepartmentService>();
@@ -97,6 +98,7 @@ namespace IssueProject
             var key = Encoding.ASCII.GetBytes(Configuration.GetSection("Appsettings:Token").Value);
 
             services.ConfigureAuthentication();
+          
             /*
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
             {
@@ -130,7 +132,7 @@ namespace IssueProject
                 o.MultipartBodyLengthLimit = int.MaxValue;
                 o.MemoryBufferThreshold = int.MaxValue;
             });
-            
+
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env,
@@ -139,22 +141,22 @@ namespace IssueProject
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-               
+
             }
             else
             {
                 app.UseExceptionHandler("/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+              //  app.UseHsts();
             }
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IssueProject v1"));
             app.UseHangfireDashboard();
             app.UseSerilogRequestLogging();
 
-            //app.UseHttpsRedirection();
+           // app.UseHttpsRedirection();
 
-            
+
             //app.UseStaticFiles(new StaticFileOptions()
             //{
             //    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"Resources")),
@@ -164,11 +166,11 @@ namespace IssueProject
             app.UseRouting();
 
             app.UseCors("AllowSpecificOrigin");
-            
+
             app.UseAuthentication();
 
             app.UseAuthorization();
-            
+
             app.UseStaticFiles();
 
             app.UseEndpoints(endpoints =>

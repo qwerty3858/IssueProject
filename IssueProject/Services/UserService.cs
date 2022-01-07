@@ -69,7 +69,8 @@ namespace IssueProject.Services
                     EmailAddress = x.EmailAddress,
                     DepartmentName=x.Department.Definition,
                     RoleName=x.Role.Definition,
-                    IsManager = x.IsManager
+                    IsManager = x.IsManager,
+                    IsKeyUser = x.IsKeyUser
                     
                 })
                 .FirstOrDefaultAsync(x => x.Id == id );

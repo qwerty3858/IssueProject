@@ -40,6 +40,7 @@ namespace IssueProject.Services
             _mapper = mapper;
 
         }
+        
         public async Task<Result<IssueSubTitle>> AddSubtitle(SubTitleInfo subTitleInfo)
         {
             try
@@ -57,6 +58,139 @@ namespace IssueProject.Services
             {
                 _logger.LogError(vEx, "Title Add Error");
                 return Result<IssueSubTitle>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<IssueTitle>> AddTitle(TitleInfo titleInfo)
+        {
+            try
+            {
+                var vTitleInfo = new IssueTitle
+                {
+                    DepartmentId = titleInfo.DepartmentId,
+                    Subject = titleInfo.Subject
+                };
+                await _context.IssueTitles.AddAsync(vTitleInfo);
+                await _context.SaveChangesAsync();
+                return Result<IssueTitle>.PrepareSuccess(vTitleInfo);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "Title Add Error");
+                return Result<IssueTitle>.PrepareFailure(vEx.Message);
+            }
+        }
+        public async Task<Result<IssueSubTitle>> UpdateSubtitle(SubtitleSummary subtitleSummary)
+        {
+            try
+            {
+                var vIssueSubTitle = await _context.IssueSubTitles.FirstOrDefaultAsync(x => x.Id == subtitleSummary.Id);
+                vIssueSubTitle.SubTitle = subtitleSummary.Subject;
+                await _context.SaveChangesAsync();
+                return Result<IssueSubTitle>.PrepareSuccess(vIssueSubTitle);
+            }
+            catch(Exception vEx)
+            {
+                _logger.LogError(vEx, "Update Subtitle Error");
+                return Result<IssueSubTitle>.PrepareFailure("Update Subtitle Error");
+            }
+        }
+        public async Task<Result<IssueTitle>> UpdateTitle(SubtitleSummary subtitleSummary)
+        {
+            try
+            {
+                var vIssueTitle = await _context.IssueTitles.FirstOrDefaultAsync(x => x.Id == subtitleSummary.Id);
+                vIssueTitle.Subject = subtitleSummary.Subject;
+                await _context.SaveChangesAsync();
+                return Result<IssueTitle>.PrepareSuccess(vIssueTitle);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "Update Subtitle Error");
+                return Result<IssueTitle>.PrepareFailure("Update Subtitle Error");
+            }
+        }
+        public async Task<Result> DeleteSubtitle(int Id)
+        {
+            try
+            {
+                var vIssueSubTitle = await _context.IssueSubTitles.FirstOrDefaultAsync(x => x.Id ==  Id);
+                _context.Remove(vIssueSubTitle);
+               // await _context.SaveChangesAsync();
+                var isSuccess = await _context.SaveChangesAsync() > 0;
+                return isSuccess
+                    ? Result.PrepareSuccess()
+                    : Result.PrepareFailure("Silme işlemi başarısız");
+              
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "Delete Subtitle Error");
+                return Result.PrepareFailure("Delete Subtitle Error");
+            }
+        }
+        public async Task<Result<List<SubtitleSummary>>> GetAllSubtitleInfo()
+        {
+            try
+            {
+
+                var vIssueTitles = await _context.IssueSubTitles
+                    .Include(x => x.Title)
+                    .ThenInclude(x => x.Department)
+                    .Select(x => new SubtitleSummary
+                    {
+                        Id = x.Id,
+                        Subject = x.SubTitle,
+                        TitleSubject = x.Title.Subject,
+                        DepartmentName = x.Title.Department.Definition,
+                        TitleId = x.Title.Id,
+                        DepartmentId = x.Title.DepartmentId
+
+                    }).ToListAsync();
+
+                if (vIssueTitles == null)
+                {
+                    _logger.LogInformation("İstenilen Title için veri bulunamadı. ");
+                    return Result<List<SubtitleSummary>>.PrepareFailure("İstenilen Title için veri bulunamadı.");
+                }
+
+                return Result<List<SubtitleSummary>>.PrepareSuccess(vIssueTitles);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "GetAllTitle Info Error");
+                return Result<List<SubtitleSummary>>.PrepareFailure("GetAllTitle Info Error");
+
+            }
+        }
+        public async Task<Result<List<TitleInfo>>> GetAllTitleInfo()
+        {
+            try
+            {
+
+                var vIssueTitles = await _context.IssueTitles
+                    .Include(x => x.Department) 
+                    .Select(x => new TitleInfo
+                    {
+                       Id = x.Id,
+                       DepartmentId = x.DepartmentId,
+                       DepartmentName = x.Department.Definition,
+                       Subject = x.Subject
+
+                    }).ToListAsync();
+
+                if (vIssueTitles == null)
+                {
+                    _logger.LogInformation("İstenilen Title için veri bulunamadı. ");
+                    return Result<List<TitleInfo>>.PrepareFailure("İstenilen Title için veri bulunamadı.");
+                }
+
+                return Result<List<TitleInfo>>.PrepareSuccess(vIssueTitles);
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "GetAllTitle Info Error");
+                return Result<List<TitleInfo>>.PrepareFailure("GetAllTitle Info Error");
+
             }
         }
         public async Task<Result<List<TitleInfo>>> GetTitleInfoByDepartmentId(int DepartmentId)
@@ -274,13 +408,14 @@ namespace IssueProject.Services
                             .Include(x => x.IssueNotes)
                             .Include(x => x.IssueRelevantDepartmants)
                             .ThenInclude(x => x.Department)
-                            .Include(x => x.IssueAttachments)
+                            .Include(x => x.IssueAttachments.Where(x => x.Deleted == false))
                             .Include(x => x.IssueRoles)
                             .ThenInclude(x => x.Role)
                             .FirstOrDefaultAsync(x => x.Id == IssueId);
 
                 vIssue.IssueActivitiys = IssueActivitiys.ToList();
                 IssueInfo issueInfo = _mapper.Map<IssueInfo>(vIssue);
+             
 
                 if (issueInfo == null)
                     return Result<IssueInfo>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
@@ -294,12 +429,82 @@ namespace IssueProject.Services
             }
         }
 
+        public Result<IssueAttachmentInfo> DeleteFile(string fileInfo, int Id)
+        {
+            try
+            {
+                if (Id <= 0)
+                {
+                    var folderNameTemp = Path.Combine(@"c:\Project\Web\Resources", "temp");
+                    string[] fileListFromTemp = Directory.GetFiles(folderNameTemp);
+                    foreach (string file in fileListFromTemp)
+                    {
+                        var fileName = Path.GetFileName(file);
+                        if (fileName == fileInfo)
+                        {
+                            File.Delete(file);
+                            var vAttachment = new IssueAttachmentInfo
+                            {
+                                UniqueName = file
+                            };
+                            return Result<IssueAttachmentInfo>.PrepareSuccess(vAttachment);
+                        }
+                    }
+                }
+                else
+                {
+
+                    var folderNameTemp = Path.Combine(@"c:\Project\Web\Resources", "temp");
+                    string[] fileListFromTemp = Directory.GetFiles(folderNameTemp);
+                    foreach (string file in fileListFromTemp)
+                    {
+                        var fileName = Path.GetFileName(file);
+                        if (fileName == fileInfo)
+                        {
+                            File.Delete(file);
+                            var vAttachment = new IssueAttachmentInfo
+                            {
+                                UniqueName = file
+                            };
+                            return Result<IssueAttachmentInfo>.PrepareSuccess(vAttachment);
+                        }
+                    }
+                    var folderNameFiles = Path.Combine(@"c:\Project\Web\Resources", "Files");
+                    string[] fileListFromFiles = Directory.GetFiles(folderNameFiles);
+                    foreach (string file in fileListFromFiles)
+                    {
+                        var fileName = Path.GetFileName(file);
+                        if (fileName == fileInfo)
+                        {
+                            File.Delete(file);
+                            var vAttachmentDelete = _context.IssueAttachments.FirstOrDefault(x => x.UniqueName == fileName);
+                            vAttachmentDelete.Deleted = true;
+                            _context.SaveChanges();
+                            var vAttachment = new IssueAttachmentInfo
+                            {
+                                UniqueName = file
+                            };
+                            return Result<IssueAttachmentInfo>.PrepareSuccess(vAttachment);
+                        }
+                    }
+
+
+                }
+
+                return Result<IssueAttachmentInfo>.PrepareFailure("Dosya Bulunamadı");
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "Delete File Error");
+                return Result<IssueAttachmentInfo>.PrepareFailure("Delete File Error");
+            }
+        }
         public async Task<Result<List<IssueAttachmentInfo>>> Upload(List<IFormFile> files)
         {
             try
             {
                 // List<IssueAttachment> vIssueAttachment;
-                var folderName = Path.Combine(@"d:\Resources", "temp");
+                var folderName = Path.Combine(@"c:\Project\Web\Resources", "temp");
 
                 var vIssueAttachmentInfos = new List<IssueAttachmentInfo>();
                 foreach (IFormFile file in files)
@@ -312,7 +517,7 @@ namespace IssueProject.Services
                         FileName = file.FileName,
                         UniqueName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName)
                     };
-                    
+
                     var fullPath = Path.Combine(folderName, vAttachment.UniqueName);
                     using (var stream = new FileStream(fullPath, FileMode.Create))
                     {
@@ -386,7 +591,7 @@ namespace IssueProject.Services
                     .Select(x => new IssueSummary
                     {
                         Id = x.Id,
-                        // WorkArea = x.WorkArea,
+                        Summary = x.Summary,
                         DepartmentName = x.Department.Definition,
                         FullName = x.User.FullName,
                         RoleName = x.User.Role.Definition,
@@ -783,7 +988,8 @@ namespace IssueProject.Services
 
                         if (vIssue == null)
                             return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
-
+                        if(vIssue.Status > ActivityStatuses.Processing)
+                            return Result<Issue>.PrepareFailure("İlgili Statü için Yetkiniz Bulunmamaktadır.Lütfen Statünüzü Kontrol Edin!");
                         // var vIssueTitle = _context.IssueTitles.FirstOrDefault(x =>x.Id == Int32.Parse(issueInfo.Title));
                         vIssue.TitleId = issueInfo.TitleId;
                         // vIssue.WorkArea = issueInfo.WorkArea; 
@@ -797,8 +1003,8 @@ namespace IssueProject.Services
                         vIssue.IssueRoles = vIssueRole.ToList();
                         if (vAttachment.Any())
                         {
-                            string tempPath = @"d:\Resources\temp";
-                            string filePath = @"d:\Resources\Files";
+                            string tempPath = @"c:\Project\Web\Resources\temp";
+                            string filePath = @"c:\Project\Web\Resources\Files";
 
                             if (!Directory.Exists(filePath))
                                 Directory.CreateDirectory(filePath);
@@ -823,7 +1029,7 @@ namespace IssueProject.Services
 
                             }
                         }
-                        
+
                         vIssue.IssueNo = 0;
                         vIssue.VersionNo = 0;
                         await _context.SaveChangesAsync();
@@ -877,14 +1083,17 @@ namespace IssueProject.Services
                             vIssue.VersionNo = (byte)issueInfo.VersionNo;
                         }
                         vIssue.Id = 0;
-
+                        var vDeletedIssue = _context.Issues.FirstOrDefault(x => x.Id == issueInfo.Id);
+                        vDeletedIssue.Deleted = true;
                         await _context.Issues.AddAsync(vIssue);
                         await _context.SaveChangesAsync();
 
                         if (vAttachment.Any())
                         {
-                            string tempPath = @"d:\Resources\temp";
-                            string filePath = @"d:\Resources\Files";
+                            //string tempPath = @"d:\Resources\temp";
+                            //string filePath = @"d:\Resources\Files";
+                            string tempPath = @"c:\Project\Web\Resources\temp";
+                            string filePath = @"c:\Project\Web\Resources\Files";
 
                             if (!Directory.Exists(filePath))
                                 Directory.CreateDirectory(filePath);
@@ -944,8 +1153,10 @@ namespace IssueProject.Services
                     await _context.SaveChangesAsync();
                     if (vAttachment.Any())
                     {
-                        string tempPath = @"d:\Resources\temp";
-                        string filePath = @"d:\Resources\Files";
+                        //string tempPath = @"d:\Resources\temp";
+                        //string filePath = @"d:\Resources\Files";
+                        string tempPath = @"c:\Project\Web\Resources\temp";
+                        string filePath = @"c:\Project\Web\Resources\Files";
 
                         if (!Directory.Exists(filePath))
                             Directory.CreateDirectory(filePath);

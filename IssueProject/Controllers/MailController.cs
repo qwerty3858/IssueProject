@@ -27,18 +27,13 @@ namespace IssueProject.Controllers
         [HttpGet]
         public async Task MailMessage()
         {
-            var vIssueConfirms = _context.IssueConfirms.Where(x => x.Status == 0).ToList();
 
-            foreach (var vIssueConfirm in vIssueConfirms)
-            {
-                var vUser = _context.Issues.Include(x => x.User).FirstOrDefault(x => x.UserId == vIssueConfirm.UserId);
-                var message = new Message(new string[] { vUser.User.EmailAddress }, "Test email ", vUser.User.FullName +
-                         " kişi tarafından Bilgilendirme Maili gönderilmiştir."
+                var message = new Message(new string[] { "poyraz.celal97@gmail.com" }, "Test email ", "   Bilgilendirme Maili gönderilmiştir."
                          , null);
                 //vIssueConfirm.Status = ConfirmStatuses.MailGonderildiBeklemede;
                 MessageIsSend checkMail = new MessageIsSend();
                 await _emailSender.SendEmailAsync(message, checkMail);
-            }
+         
         }
         [HttpPost]
         public async Task MailMessageWithFile()
@@ -49,5 +44,7 @@ namespace IssueProject.Controllers
             MessageIsSend checkMail = new MessageIsSend();
             await _emailSender.SendEmailAsync(message, checkMail);
         }
+
+
     }
 }

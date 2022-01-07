@@ -11,6 +11,7 @@ namespace IssueProject.Models.Issue
         public string DepartmentName { get; set; }
         public string FullName { get; set; }
         public string RoleName { get; set; }
+        public string Summary { get; set; }
         public int Status { get; set; }
         public List<IssueRelevantDepartmentInfo> RelevantDepartmentId { get; set; }
     }

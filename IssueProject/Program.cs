@@ -35,6 +35,10 @@ namespace IssueProject
         }
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>().UseSerilog().UseUrls(new[] { "http://*:5001" });
+                .UseStartup<Startup>()
+            .UseKestrel()
+            .UseSerilog()
+            .UseUrls(new[] { "http://*:5001" })
+            .UseIISIntegration();
     }
 }
