@@ -10,6 +10,8 @@ namespace IssueProject.FluentApiConfigurations
         {
 
             modelBuilder.ToTable("IssueActivitiyDetail");
+            modelBuilder.HasKey(a => a.Id);
+
             modelBuilder.Property(e => e.Definition).IsRequired().HasMaxLength(2048).IsUnicode(false).HasComment("Açıklama");
             modelBuilder.Property(e => e.Explanation).HasMaxLength(2048).IsUnicode(false).HasComment("Açıklama");
             modelBuilder.Property(e => e.IssueActivitiyId).HasComment("Konu Id");
@@ -18,13 +20,14 @@ namespace IssueProject.FluentApiConfigurations
             modelBuilder.Property(e => e.RoleId).HasComment("Rol");
             modelBuilder.Property(e => e.ParentId);
 
-            modelBuilder.HasOne(z=>z.IssueActivitiy)
-                .WithMany(z=>z.IssueActivitiyDetails)
-                .HasForeignKey(d=>d.IssueActivitiyId)
+            modelBuilder.HasOne(z => z.IssueActivitiy)
+                .WithMany(z => z.IssueActivitiyDetails)
+                .HasForeignKey(d => d.IssueActivitiyId)
                 .HasConstraintName("FK_IssueActivitiyDetails_IssueActivities_IssueActivitiyId");
+
             modelBuilder
                 .HasMany(z => z.IssueActivitiyDetails)
-                .WithOne(z => z.Parent)
+                .WithOne()
                 .HasForeignKey(z => z.ParentId)
                 .HasConstraintName("FK_IssueActivitiyDetails_IssueActivitiyDetails_ParentId");
             

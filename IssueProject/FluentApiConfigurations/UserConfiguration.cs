@@ -51,6 +51,10 @@ namespace IssueProject.FluentApiConfigurations
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_Role_User_");
 
+            modelBuilder.HasOne(d => d.Manager)
+                .WithMany(p => p.Users)
+                .HasForeignKey(d => d.ManagerId)
+                .HasConstraintName("FK_User_ManagerDepartment");
         }
     }
 }

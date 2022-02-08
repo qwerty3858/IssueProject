@@ -26,6 +26,8 @@ namespace IssueProject.Services
         {
             try
             {
+                var vManagerDepartmentControl = _context.Users.Where(x => x.DepartmentId == 0).ToList();
+                var vList = _context.Users.Include(x=>x.Department).ThenInclude(x=>x.ManagerDepartments).ToList();
                 var vResult = await _context.Users
                            .Where(x => x.Deleted == false)
                            .Include(x => x.Department)
@@ -58,24 +60,50 @@ namespace IssueProject.Services
 
             try
             {
-                var vResult = await _context.Users.Include(a=>a.Role).Include(d=>d.Department)
+                var vManagerControl = _context.Users.FirstOrDefault(x => x.Id == id);
+
+                if(vManagerControl.DepartmentId == 0)
+                {
+                    var vResult = await _context.Users.Include(a => a.Role)
                 .Select(x => new UserInfo
                 {
                     Id = x.Id,
-                    DepartmentId = x.DepartmentId,
+                    DepartmentId = 0,
                     RoleId = x.RoleId,
                     FullName = x.FullName,
-                    Password=x.Password,
+                    Password = x.Password,
                     EmailAddress = x.EmailAddress,
-                    DepartmentName=x.Department.Definition,
-                    RoleName=x.Role.Definition,
+                    DepartmentName = "",
+                    RoleName = x.Role.Definition,
                     IsManager = x.IsManager,
                     IsKeyUser = x.IsKeyUser
-                    
-                })
-                .FirstOrDefaultAsync(x => x.Id == id );
 
-                return Result<UserInfo>.PrepareSuccess(vResult);
+                })
+                .FirstOrDefaultAsync(x => x.Id == id);
+                    return Result<UserInfo>.PrepareSuccess(vResult);
+                }
+                else
+                {
+                    var vResult = await _context.Users.Include(a => a.Role).Include(d => d.Department)
+               .Select(x => new UserInfo
+               {
+                   Id = x.Id,
+                   DepartmentId = x.DepartmentId,
+                   RoleId = x.RoleId,
+                   FullName = x.FullName,
+                   Password = x.Password,
+                   EmailAddress = x.EmailAddress,
+                   DepartmentName = x.Department.Definition,
+                   RoleName = x.Role.Definition,
+                   IsManager = x.IsManager,
+                   IsKeyUser = x.IsKeyUser
+
+               })
+               .FirstOrDefaultAsync(x => x.Id == id);
+
+                    return Result<UserInfo>.PrepareSuccess(vResult);
+                }
+               
             }
             catch (Exception vEx)
             {

@@ -27,11 +27,11 @@ namespace IssueProject.Controllers
             _httpContextAccessor = httpContextAccessor;
         }
 
-        [HttpGet("SuperAdminIssueList")]
+        [HttpGet("PublicIssueList")]
         //[Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> IssueList()
         { 
-            var vResult = await _issueService.GetList();
+            var vResult = await _issueService.GetListIssue();
             return Ok(vResult);
         }
         [HttpGet("PrivateIssueList")]
@@ -43,7 +43,15 @@ namespace IssueProject.Controllers
             var vResult = await _issueService.GetListByUserId(vUserId);
             return Ok(vResult);
         }
+        [HttpGet("GetListRelevantIssues")]
 
+        public async Task<IActionResult> GetListRelevantIssues()
+        {
+            //string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            int vUserId = User.GetSubject<int>();
+            var vResult = await _issueService.GetListRelevantIssues(vUserId);
+            return Ok(vResult);
+        }
         [HttpGet("ComeToMeIssues")]
 
         public async Task<IActionResult> GetListComeToMeIssues()
@@ -80,6 +88,24 @@ namespace IssueProject.Controllers
             int vUserId = User.GetSubject<int>();
             //var file = Request.Form.Files[0];
             var vResult = await _issueService.AddIssue(issueInfo, vUserId);
+            return Ok(vResult);
+        }
+        [HttpPost("Update")]
+        public async Task<IActionResult> UpdateIssue(IssueInfo issueInfo)
+        {
+            //string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            int vUserId = User.GetSubject<int>();
+            //var file = Request.Form.Files[0];
+            var vResult = await _issueService.UpdateIssue(issueInfo, vUserId);
+            return Ok(vResult);
+        }
+        [HttpPost("Revision")]
+        public async Task<IActionResult> RevisionIssue(IssueInfo issueInfo)
+        {
+            //string vUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value;
+            int vUserId = User.GetSubject<int>();
+            //var file = Request.Form.Files[0];
+            var vResult = await _issueService.RevisionIssue(issueInfo, vUserId);
             return Ok(vResult);
         }
         [HttpPost("AddSubtitle")]

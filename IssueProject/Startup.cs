@@ -1,5 +1,6 @@
 using EmailService;
 using Hangfire;
+using Hangfire.SqlServer;
 using IssueProject.Entity.Context;
 using IssueProject.Hangfire;
 using IssueProject.Hangfire.Interface;
@@ -26,23 +27,30 @@ namespace IssueProject
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment Environment { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
-            services.AddHangfireServer();
 
+            if (!Environment.IsDevelopment())
+            {
+                services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+                services.AddHangfireServer();
+            }
+        
             services.AddDbContext<_2Mes_ConceptualContext>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"));
                 options.EnableSensitiveDataLogging(true);
+                //options.UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking);
             });
 
             var emailConfig = Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
@@ -146,12 +154,14 @@ namespace IssueProject
             else
             {
                 app.UseExceptionHandler("/Error");
+
+                app.UseHangfireDashboard();
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-              //  app.UseHsts();
+                //  app.UseHsts();
             }
             app.UseSwagger();
             app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "IssueProject v1"));
-            app.UseHangfireDashboard();
+                      
             app.UseSerilogRequestLogging();
 
            // app.UseHttpsRedirection();
@@ -178,7 +188,10 @@ namespace IssueProject
                 endpoints.MapControllers();
             });
             //  RecurringJob.AddOrUpdate("SendMailJob", () => JobMethod(), "* * * * *", TimeZoneInfo.FindSystemTimeZoneById("Turkey Standard Time"));
-            JobManager.Create(serviceProvider);
+
+
+            if (!env.IsDevelopment())
+                JobManager.Create(serviceProvider);
 
         }
     }

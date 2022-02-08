@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IssueProject.Entity
 {
-    public partial class IssueActivitiyDetail
+    public class IssueActivitiyDetail
     {
         public int Id { get; set; }
         public int IssueActivitiyId { get; set; }
@@ -14,11 +14,10 @@ namespace IssueProject.Entity
         public string Explanation { get; set; }
         public int? ParentId { get; set; }
 
-
         public virtual IssueActivitiy IssueActivitiy { get; set; }
 
         public virtual List<IssueActivitiyDetail> IssueActivitiyDetails { get; set; }
         
-        public virtual IssueActivitiyDetail Parent { get; set; }
+      //  public virtual IssueActivitiyDetail Parent { get; set; }
     }
 }

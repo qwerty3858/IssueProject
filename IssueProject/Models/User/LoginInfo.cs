@@ -11,7 +11,10 @@ namespace IssueProject.Models.User
         public string AccessToken { get; set; } = "";
         public string RefreshToken { get; set; } = "";
         public string TokenType { get; set; } = "";
-
+        public bool IsManager { get; set; } 
+        public bool IsVisible { get; set; } 
+        public bool IsKeyUser { get; set; } 
+        public bool IsCreated { get; set; } 
         public int ValidFor { get; set; }
         public DateTime Issued { get; set; }
         public DateTime Expires { get; set; }

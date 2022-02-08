@@ -72,7 +72,7 @@ namespace IssueProject.Services
 
             vIdentity.AddClaim(new Claim("aud", vClient.Id));
             vIdentity.AddClaim(new Claim(ClaimTypes.NameIdentifier, vUser.Id.ToString()));
-            vIdentity.AddClaim(new Claim(ClaimTypes.Role, vUser.Role.Definition));
+            vIdentity.AddClaim(new Claim(ClaimTypes.Role, vUser.Role.Definition)); 
 
             DateTime vIssuedTime = DateTime.UtcNow;
 
@@ -125,6 +125,10 @@ namespace IssueProject.Services
                 UserId = vUser.Id,
                 FullName = vUser.FullName,
                 Role = vUser.RoleId,
+                IsManager = vUser.IsManager,
+                IsVisible = vUser.IsVisible,
+                IsKeyUser = vUser.IsKeyUser,
+                IsCreated = vUser.IsCreated,
                 AccessToken = vToken,
                 RefreshToken = vRefreshTokenId,
                 TokenType = JwtBearerDefaults.AuthenticationScheme,

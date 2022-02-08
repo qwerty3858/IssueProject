@@ -6,6 +6,7 @@ namespace IssueProject.Models.IssueRelevantDepartMent
     {
         public DepartmentInfo Department { get; set; }
         public int DepartmentId { get; set; }
+        public int Id { get; set; }
 
     }
 }

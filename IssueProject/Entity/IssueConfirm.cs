@@ -13,7 +13,7 @@ namespace IssueProject.Entity
         public int DepartmentId { get; set; }
         public int UserId { get; set; } 
         public ConfirmStatuses Status { get; set; }
-        public string? Description { get; set; }
+        public string Description { get; set; }
         public DateTime CreateTime { get; set; } = new DateTime();
         public DateTime? MailTime { get; set; }
         public DateTime SubmitTime { get; set; } = DateTime.Now;

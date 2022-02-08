@@ -10,7 +10,7 @@ namespace IssueProject.Models.IssueActivity
         public short SubActivityNo { get; set; }
         public string SubActivityTitle { get; set; }
         //public int ParentId { get; set; }
-        
+        public int Id { get; set; }
         public virtual List<IssueActivitiyDetailInfo> IssueActivityDetailInfos { get; set; }
     }
 }

@@ -32,6 +32,7 @@ namespace IssueProject.Entity.Context
         public virtual DbSet<UserToken> UserTokens { get; set; }
         public virtual DbSet<IssueSubTitle> IssueSubTitles { get; set; }
         public virtual DbSet<IssueTitle> IssueTitles { get; set; }
+        public virtual DbSet<ManagerDepartment> ManagerDepartments { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             //FluentApiCompany için
@@ -51,6 +52,7 @@ namespace IssueProject.Entity.Context
             modelBuilder.ApplyConfiguration(new UserTokenConfiguration());
             modelBuilder.ApplyConfiguration(new IssueTitleConfiguration());
             modelBuilder.ApplyConfiguration(new IssueSubTitleConfiguration());
+            modelBuilder.ApplyConfiguration(new ManagerDepartmentConfiguration());
 
         }
     }

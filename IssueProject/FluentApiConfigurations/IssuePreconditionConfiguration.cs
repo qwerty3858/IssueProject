@@ -13,7 +13,9 @@ namespace IssueProject.FluentApiConfigurations
         public void Configure(EntityTypeBuilder<IssuePrecondition> modelBuilder)
         {
             modelBuilder.ToTable("IssuePrecondition");
+            modelBuilder.HasKey(e => e.Id);
 
+            modelBuilder.HasIndex(e => e.LineNo, "ix_code");
             modelBuilder.Property(e => e.Explanation)
                 .IsRequired()
                 .HasMaxLength(512)
