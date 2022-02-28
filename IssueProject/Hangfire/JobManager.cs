@@ -3,10 +3,8 @@ using Hangfire;
 using IssueProject.Common;
 using IssueProject.Entity.Context;
 using IssueProject.Hangfire.Interface;
-using IssueProject.Models.RejectReason;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 

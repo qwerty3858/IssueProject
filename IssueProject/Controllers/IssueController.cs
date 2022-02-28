@@ -1,14 +1,10 @@
 ﻿using IssueProject.Common;
 using IssueProject.Models.Issue;
 using IssueProject.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Security.Claims;
 using System.Threading.Tasks;
-using System.Web;
-using System.IO;
 using IssueProject.Models.SubTitle;
 using IssueProject.Models.Title;
 

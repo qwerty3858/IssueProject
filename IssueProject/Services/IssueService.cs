@@ -5,7 +5,6 @@ using IssueProject.Entity.Context;
 
 using IssueProject.Models.Issue;
 using IssueProject.Models.IssueActivityDetail;
-using IssueProject.Models.IssueComfirm;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -13,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using AutoMapper;
 using IssueProject.Models.Title;
@@ -367,7 +365,10 @@ namespace IssueProject.Services
         {
             try
             {
-                var vIssueActivitys = _context.IssueActivitiys.Include(x => x.IssueActivitiyDetails).Where(x => x.IssueId == IssueId).ToList();
+                var vIssueActivitys = _context.IssueActivitiys
+                    .Include(x => x.IssueActivitiyDetails.OrderBy(detail => detail.LineNo))
+                    .Where(x => x.IssueId == IssueId)
+                    .ToList();
 
 
                 List<IssueActivitiy> IssueActivitiys = new List<IssueActivitiy>();
@@ -1168,248 +1169,7 @@ namespace IssueProject.Services
                 return Result<Issue>.PrepareFailure($"Update Issue Error. {vEx.Message}");
             }
         }
-        public async Task<Result<Issue>> UpdateIssue(IssueInfo issueInfo, int UserId)
-        {
-            try
-            {
-
-                var vUser = _context.Users.FirstOrDefault(x => x.Id == UserId && x.Deleted == false);
-                if (vUser == null)
-                {
-                    return Result<Issue>.PrepareFailure("User Bulunamadı.");
-                }
-
-                var vRevelantDepartment = issueInfo.IssueRelevantDepartmentInfos.Select(x => new IssueRelevantDepartmant
-                {
-                    DepartmentId = x.DepartmentId,
-                    Id = x.Id
-
-                });
-
-                var vPrecondition = issueInfo.IssuePreconditionInfos.Select(x => new IssuePrecondition
-                {
-                    LineNo = x.LineNo,
-                    Explanation = x.Explanation,
-                    Id = x.Id
-                });
-
-                var vIssueNote = issueInfo.IssueNoteInfos.Select(x => new IssueNote
-                {
-                    LineNo = x.LineNo,
-                    Explanation = x.Explanation,
-                    Id = x.Id
-
-                });
-                List<IssueActivitiy> vIssueActivitiys = new List<IssueActivitiy>();
-
-
-                foreach (var vIssueActivityInfo in issueInfo.IssueActivitiyInfos)
-                {
-                    var vIssueActivity = new IssueActivitiy
-                    {
-                        Id = vIssueActivityInfo.Id,
-                        Type = vIssueActivityInfo.Type,
-                        SubActivityNo = vIssueActivityInfo.SubActivityNo,
-                        SubActivityTitle = vIssueActivityInfo.SubActivityTitle,
-                        IssueActivitiyDetails = new List<IssueActivitiyDetail>()
-                    };
-
-                  
-                        List<IssueActivitiyDetail> vDetails = new List<IssueActivitiyDetail>();
-                        GetIssueActivitiyDetailsForUpdate(vDetails, vIssueActivity, null, vIssueActivityInfo.IssueActivityDetailInfos);
-                        foreach (var vDetail in vDetails)
-                            vIssueActivity.IssueActivitiyDetails.Add(vDetail);
-                   
-
-                    vIssueActivitiys.Add(vIssueActivity);
-                }
-
-                var vIssueRole = issueInfo.IssueRoleInfos.Select(x => new IssueRole
-                {
-                    RoleId = (byte)(x.RoleId),
-                    Id = x.Id
-                });
-
-                var vAttachment = issueInfo.IssueAttachmentInfos.Select(x => new IssueAttachment
-                {
-                    Deleted = false,
-                    FileName = x.FileName,
-                    UniqueName = x.UniqueName,
-                });
-
-                if (issueInfo.Status == ActivityStatuses.Processing)
-                {
-                    var vIssue = _context.Issues
-                     // .Include(x => x.IssueActivitiys)
-                     // .ThenInclude(x => x.IssueActivitiyDetails)
-                      .Include(x => x.IssuePreconditions)
-                      .Include(x => x.IssueNotes)
-                      .Include(x => x.IssueRelevantDepartmants)
-                      .Include(x => x.IssueAttachments)
-                      .Include(x => x.IssueRoles)
-                      .FirstOrDefault(x => x.Id == issueInfo.Id);
-
-                    var vIssueActivitys = _context.IssueActivitiys
-                        .Include(x => x.IssueActivitiyDetails)
-                        .Where(x => x.IssueId == issueInfo.Id)
-                        .ToList();
-
-                    // _context.Attach(vIssue);
-                    if (vIssue == null)
-                        return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
-
-                    if (vIssue.Status > ActivityStatuses.Processing)
-                        return Result<Issue>.PrepareFailure("İlgili Statü için Yetkiniz Bulunmamaktadır.Lütfen Statünüzü Kontrol Edin!");
-
-                    _context.Issues.Attach(vIssue);
-
-                    _context.IssueActivitiys.RemoveRange(vIssueActivitys);                   
-
-                    vIssue.TitleId = issueInfo.TitleId;
-                    vIssue.SubtitleId = issueInfo.SubtitleId;
-                    vIssue.Summary = issueInfo.Summary;
-                    vIssue.Status = ActivityStatuses.Processing;
-                    vIssue.IssueActivitiys = vIssueActivitiys.ToList();
-                    vIssue.IssueNotes = vIssueNote.ToList();
-                    vIssue.IssuePreconditions = vPrecondition.ToList();
-                    vIssue.IssueRelevantDepartmants = vRevelantDepartment.ToList();
-                    vIssue.IssueRoles = vIssueRole.ToList();
-
-                    if (vAttachment.Any())
-                    {
-                        string tempPath = @"c:\Project\Web\Resources\temp";
-                        string filePath = @"c:\Project\Web\Resources\Files";
-
-                        if (!Directory.Exists(filePath))
-                            Directory.CreateDirectory(filePath);
-
-                        foreach (var file in vAttachment)
-                        {
-                            var vAttachmentFile = _context.IssueAttachments.FirstOrDefault(x => x.UniqueName == file.UniqueName);
-                            if (vAttachmentFile == null)
-                            {
-                                var tempFilePath = Path.Combine(tempPath, file.UniqueName);
-                                var newFilePath = Path.Combine(filePath, file.UniqueName);
-
-                                File.Move(tempFilePath, newFilePath);
-                                vIssue.IssueAttachments.Add(file);
-                            }
-
-                        }
-                    }
-
-                    vIssue.IssueNo = 0;
-                    vIssue.VersionNo = 0;
-                    // _context.Entry(vIssue.IssueActivitiys).State = EntityState.Modified;
-
-                    await _context.SaveChangesAsync();
-                    if (issueInfo.IsSaveWithConfirm)
-                        await Confirm(issueInfo.Id, UserId);
-                    return Result<Issue>.PrepareSuccess(vIssue);
-                }
-
-                else
-                {
-                    var vIssue = _context.Issues.AsNoTracking()
-                      //.Include(x => x.IssueActivitiys)
-                      //.ThenInclude(x => x.IssueActivitiyDetails)
-                      .Include(x => x.IssuePreconditions)
-                      .Include(x => x.IssueNotes)
-                      .Include(x => x.IssueRelevantDepartmants)
-                      // .ThenInclude(x => x.Department)
-                      .Include(x => x.IssueAttachments)
-                      .Include(x => x.IssueRoles)
-                  //.ThenInclude(x => x.Role)
-                  .FirstOrDefault(x => x.Id == issueInfo.Id);
-
-                    var vIssueActivitys = _context.IssueActivitiys
-                      .Include(x => x.IssueActivitiyDetails)
-                      .Where(x => x.IssueId == issueInfo.Id)
-                      .ToList();
-                    if (vIssue == null)
-                        return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
-                    //_context.Issues.Attach(vIssue);
-
-                    _context.IssueActivitiys.RemoveRange(vIssueActivitys);
-                    // var vIssueTitle = _context.IssueTitles.FirstOrDefault(x =>x.Id == Int32.Parse(issueInfo.Title));
-                    vIssue.TitleId = issueInfo.TitleId;
-                    // vIssue.WorkArea = issueInfo.WorkArea; 
-                    vIssue.SubtitleId = issueInfo.SubtitleId;
-                    vIssue.Summary = issueInfo.Summary;
-                    vIssue.Status = ActivityStatuses.Processing;
-                    vIssue.IssueActivitiys = vIssueActivitiys.ToList();
-                    vIssue.IssueNotes = vIssueNote.ToList();
-                    vIssue.IssuePreconditions = vPrecondition.ToList();
-                    vIssue.IssueRelevantDepartmants = vRevelantDepartment.ToList();
-                    vIssue.IssueRoles = vIssueRole.ToList();
-                    vIssue.IssueAttachments = vAttachment.ToList();
-                   
-                    if (vIssue.IssueNo != 0)
-                    {
-                        var vIssueNoInfos = await _context.Issues.FirstOrDefaultAsync(x => x.Id == vIssue.IssueNo);
-                        if (vIssueNoInfos == null)
-                            return Result<Issue>.PrepareFailure("Reddedilme işlemi sırasında IssueNo bilgisi bulunamadı.");
-                        vIssue.IssueNo = (short)vIssueNoInfos.Id;
-                        vIssue.VersionNo += 1;
-                    }
-                    else
-                    {
-                        issueInfo.VersionNo += 1;
-                        vIssue.IssueNo = (short)issueInfo.Id;
-                        vIssue.VersionNo = (byte)issueInfo.VersionNo;
-                    }
-                    vIssue.Id = 0;
-
-                    //var vDeletedIssue = _context.Issues.FirstOrDefault(x => x.Id == issueInfo.Id);
-                    
-                    vIssue.Deleted = true;
-                    
-                    await _context.Issues.AddAsync(vIssue);
-
-                    await _context.SaveChangesAsync();
-
-                    if (vAttachment.Any())
-                    {
-                        //string tempPath = @"d:\Resources\temp";
-                        //string filePath = @"d:\Resources\Files";
-                        string tempPath = @"c:\Project\Web\Resources\temp";
-                        string filePath = @"c:\Project\Web\Resources\Files";
-
-                        if (!Directory.Exists(filePath))
-                            Directory.CreateDirectory(filePath);
-
-                        foreach (var file in vAttachment)
-                        {
-                            var tempFilePath = Path.Combine(tempPath, file.UniqueName);
-                            var newFilePath = Path.Combine(filePath, file.UniqueName);
-
-                            //if (!File.Exists(tempFilePath))
-                            //    continue;
-
-                            //if (File.Exists(newFilePath))
-                            //    continue;
-
-                            File.Move(tempFilePath, newFilePath);
-                        }
-                    }
-
-                    if (issueInfo.IsSaveWithConfirm)
-                        await Confirm(vIssue.Id, UserId);
-
-                    return Result<Issue>.PrepareSuccess(vIssue);
-
-
-
-                }
-
-
-            }
-            catch (Exception vEx)
-            {
-                _logger.LogError(vEx, "Update Issue Error");
-                return Result<Issue>.PrepareFailure($"Update Issue Error. {vEx.Message}");
-            }
-        }
+    
         public async Task<Result<Issue>> AddIssue(IssueInfo issueInfo, int UserId)
         {
             try
@@ -1539,7 +1299,243 @@ namespace IssueProject.Services
                 return Result<Issue>.PrepareFailure($"Add Issue Error. {vEx.Message}");
             }
         }
+        public async Task<Result<Issue>> UpdateIssue(IssueInfo issueInfo, int UserId)
+        {
+            try
+            {
 
+                var vUser = _context.Users.FirstOrDefault(x => x.Id == UserId && x.Deleted == false);
+                if (vUser == null)
+                {
+                    return Result<Issue>.PrepareFailure("User Bulunamadı.");
+                }
+
+                var vRevelantDepartment = issueInfo.IssueRelevantDepartmentInfos.Select(x => new IssueRelevantDepartmant
+                {
+                    DepartmentId = x.DepartmentId,
+                    Id = x.Id
+
+                });
+
+                var vPrecondition = issueInfo.IssuePreconditionInfos.Select(x => new IssuePrecondition
+                {
+                    LineNo = x.LineNo,
+                    Explanation = x.Explanation,
+                    Id = x.Id
+                });
+
+                var vIssueNote = issueInfo.IssueNoteInfos.Select(x => new IssueNote
+                {
+                    LineNo = x.LineNo,
+                    Explanation = x.Explanation,
+                    Id = x.Id
+
+                });
+                List<IssueActivitiy> vIssueActivitiys = new List<IssueActivitiy>();
+
+
+                foreach (var vIssueActivityInfo in issueInfo.IssueActivitiyInfos)
+                {
+                    var vIssueActivity = new IssueActivitiy
+                    {
+                        Id = vIssueActivityInfo.Id,
+                        Type = vIssueActivityInfo.Type,
+                        SubActivityNo = vIssueActivityInfo.SubActivityNo,
+                        SubActivityTitle = vIssueActivityInfo.SubActivityTitle,
+                        IssueActivitiyDetails = new List<IssueActivitiyDetail>()
+                    };
+
+                    vIssueActivity.IssueActivitiyDetails = GetIssueActivitiyDetails(vIssueActivity, null, vIssueActivityInfo.IssueActivityDetailInfos);
+
+                    vIssueActivitiys.Add(vIssueActivity);
+                }
+
+                var vIssueRole = issueInfo.IssueRoleInfos.Select(x => new IssueRole
+                {
+                    RoleId = (byte)(x.RoleId),
+                    Id = x.Id
+                });
+
+                var vAttachment = issueInfo.IssueAttachmentInfos.Select(x => new IssueAttachment
+                {
+                    Deleted = false,
+                    FileName = x.FileName,
+                    UniqueName = x.UniqueName,
+                });
+
+                if (issueInfo.Status == ActivityStatuses.Processing)
+                {
+                    var vIssue = _context.Issues
+                      // .Include(x => x.IssueActivitiys)
+                      // .ThenInclude(x => x.IssueActivitiyDetails)
+                      .Include(x => x.IssuePreconditions)
+                      .Include(x => x.IssueNotes)
+                      .Include(x => x.IssueRelevantDepartmants)
+                      .Include(x => x.IssueAttachments)
+                      .Include(x => x.IssueRoles)
+                      .FirstOrDefault(x => x.Id == issueInfo.Id);
+
+                    var vIssueActivitys = _context.IssueActivitiys
+                        .Include(x => x.IssueActivitiyDetails)
+                        .Where(x => x.IssueId == issueInfo.Id)
+                        .ToList();
+
+                    // _context.Attach(vIssue);
+                    if (vIssue == null)
+                        return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
+
+                    if (vIssue.Status > ActivityStatuses.Processing)
+                        return Result<Issue>.PrepareFailure("İlgili Statü için Yetkiniz Bulunmamaktadır.Lütfen Statünüzü Kontrol Edin!");
+
+                    _context.Issues.Attach(vIssue);
+
+                    _context.IssueActivitiys.RemoveRange(vIssueActivitys);
+
+                    vIssue.TitleId = issueInfo.TitleId;
+                    vIssue.SubtitleId = issueInfo.SubtitleId;
+                    vIssue.Summary = issueInfo.Summary;
+                    vIssue.Status = ActivityStatuses.Processing;
+                    vIssue.IssueActivitiys = vIssueActivitiys.ToList();
+                    vIssue.IssueNotes = vIssueNote.ToList();
+                    vIssue.IssuePreconditions = vPrecondition.ToList();
+                    vIssue.IssueRelevantDepartmants = vRevelantDepartment.ToList();
+                    vIssue.IssueRoles = vIssueRole.ToList();
+
+                    if (vAttachment.Any())
+                    {
+                        string tempPath = @"c:\Project\Web\Resources\temp";
+                        string filePath = @"c:\Project\Web\Resources\Files";
+
+                        if (!Directory.Exists(filePath))
+                            Directory.CreateDirectory(filePath);
+
+                        foreach (var file in vAttachment)
+                        {
+                            var vAttachmentFile = _context.IssueAttachments.FirstOrDefault(x => x.UniqueName == file.UniqueName);
+                            if (vAttachmentFile == null)
+                            {
+                                var tempFilePath = Path.Combine(tempPath, file.UniqueName);
+                                var newFilePath = Path.Combine(filePath, file.UniqueName);
+
+                                File.Move(tempFilePath, newFilePath);
+                                vIssue.IssueAttachments.Add(file);
+                            }
+
+                        }
+                    }
+
+                    vIssue.IssueNo = 0;
+                    vIssue.VersionNo = 0;
+                    // _context.Entry(vIssue.IssueActivitiys).State = EntityState.Modified;
+
+                    await _context.SaveChangesAsync();
+                    if (issueInfo.IsSaveWithConfirm)
+                        await Confirm(issueInfo.Id, UserId);
+                    return Result<Issue>.PrepareSuccess(vIssue);
+                }
+
+                else
+                {
+                    var vIssue = _context.Issues.AsNoTracking()
+                      //.Include(x => x.IssueActivitiys)
+                      //.ThenInclude(x => x.IssueActivitiyDetails)
+                      .Include(x => x.IssuePreconditions)
+                      .Include(x => x.IssueNotes)
+                      .Include(x => x.IssueRelevantDepartmants)
+                      // .ThenInclude(x => x.Department)
+                      .Include(x => x.IssueAttachments)
+                      .Include(x => x.IssueRoles)
+                  //.ThenInclude(x => x.Role)
+                  .FirstOrDefault(x => x.Id == issueInfo.Id);
+
+                    var vIssueActivitys = _context.IssueActivitiys
+                      .Include(x => x.IssueActivitiyDetails)
+                      .Where(x => x.IssueId == issueInfo.Id)
+                      .ToList();
+                    if (vIssue == null)
+                        return Result<Issue>.PrepareFailure("İstenilen sorguya ait veri bulunamadı.");
+                    //_context.Issues.Attach(vIssue);
+
+                    _context.IssueActivitiys.RemoveRange(vIssueActivitys);
+                    // var vIssueTitle = _context.IssueTitles.FirstOrDefault(x =>x.Id == Int32.Parse(issueInfo.Title));
+                    vIssue.TitleId = issueInfo.TitleId;
+                    // vIssue.WorkArea = issueInfo.WorkArea; 
+                    vIssue.SubtitleId = issueInfo.SubtitleId;
+                    vIssue.Summary = issueInfo.Summary;
+                    vIssue.Status = ActivityStatuses.Processing;
+                    vIssue.IssueActivitiys = vIssueActivitiys.ToList();
+                    vIssue.IssueNotes = vIssueNote.ToList();
+                    vIssue.IssuePreconditions = vPrecondition.ToList();
+                    vIssue.IssueRelevantDepartmants = vRevelantDepartment.ToList();
+                    vIssue.IssueRoles = vIssueRole.ToList();
+                    vIssue.IssueAttachments = vAttachment.ToList();
+
+                    if (vIssue.IssueNo != 0)
+                    {
+                        var vIssueNoInfos = await _context.Issues.FirstOrDefaultAsync(x => x.Id == vIssue.IssueNo);
+                        if (vIssueNoInfos == null)
+                            return Result<Issue>.PrepareFailure("Reddedilme işlemi sırasında IssueNo bilgisi bulunamadı.");
+                        vIssue.IssueNo = (short)vIssueNoInfos.Id;
+                        vIssue.VersionNo += 1;
+                    }
+                    else
+                    {
+                        issueInfo.VersionNo += 1;
+                        vIssue.IssueNo = (short)issueInfo.Id;
+                        vIssue.VersionNo = (byte)issueInfo.VersionNo;
+                    }
+                    vIssue.Id = 0;
+
+                    //var vDeletedIssue = _context.Issues.FirstOrDefault(x => x.Id == issueInfo.Id);
+
+                    vIssue.Deleted = true;
+
+                    await _context.Issues.AddAsync(vIssue);
+
+                    await _context.SaveChangesAsync();
+
+                    if (vAttachment.Any())
+                    {
+                        //string tempPath = @"d:\Resources\temp";
+                        //string filePath = @"d:\Resources\Files";
+                        string tempPath = @"c:\Project\Web\Resources\temp";
+                        string filePath = @"c:\Project\Web\Resources\Files";
+
+                        if (!Directory.Exists(filePath))
+                            Directory.CreateDirectory(filePath);
+
+                        foreach (var file in vAttachment)
+                        {
+                            var tempFilePath = Path.Combine(tempPath, file.UniqueName);
+                            var newFilePath = Path.Combine(filePath, file.UniqueName);
+
+                            //if (!File.Exists(tempFilePath))
+                            //    continue;
+
+                            //if (File.Exists(newFilePath))
+                            //    continue;
+
+                            File.Move(tempFilePath, newFilePath);
+                        }
+                    }
+
+                    if (issueInfo.IsSaveWithConfirm)
+                        await Confirm(vIssue.Id, UserId);
+
+                    return Result<Issue>.PrepareSuccess(vIssue);
+
+
+
+                }
+
+
+            }
+            catch (Exception vEx)
+            {
+                _logger.LogError(vEx, "Update Issue Error");
+                return Result<Issue>.PrepareFailure($"Update Issue Error. {vEx.Message}");
+            }
+        }
         public async Task<Result<Issue>> DeleteIssue(int id)
         {
             try
@@ -1582,17 +1578,14 @@ namespace IssueProject.Services
             {
                 var detail = new IssueActivitiyDetail
                 {
-                   // Id = item.Id,
-                    IssueActivitiyId = activity.Id,
+                    Id = item.Id,
                     LineNo = item.LineNo,
                     Definition = item.Definition,
                     RoleId = (byte)item.RoleId,
                     Medium = item.Medium,
                     Explanation = item.Explanation,
-                    ParentId = parentNode?.Id,
-                    //Parent = parentNode,
-                    //IssueActivitiy = activity,
-
+                    IssueActivitiy = activity,
+                    Parent = parentNode,
                 };
 
                 if (item.IssueActivityDetailInfos != null)
@@ -1606,7 +1599,7 @@ namespace IssueProject.Services
 
             return details;
         }
-
+        /*
         private void GetIssueActivitiyDetailsForUpdate(List<IssueActivitiyDetail> details, IssueActivitiy activity, IssueActivitiyDetail parentNode, List<IssueActivitiyDetailInfo> nodes)
         {
             
@@ -1633,65 +1626,6 @@ namespace IssueProject.Services
                 }
 
             }
-        }
-        /*
-        private List<IssueActivitiyDetail> GetIssueActivitiyDetailsWithoutId(IssueActivitiy activity, IssueActivitiyDetail parentNode, List<IssueActivitiyDetailInfo> nodes)
-        {
-            List<IssueActivitiyDetail> details = new List<IssueActivitiyDetail>();
-            foreach (var item in nodes)
-            {
-                var detail = new IssueActivitiyDetail
-                {
-
-                    IssueActivitiyId = activity.Id,
-                    LineNo = item.LineNo,
-                    Definition = item.Definition,
-                    RoleId = (byte)item.RoleId,
-                    Medium = item.Medium,
-                    Explanation = item.Explanation,
-                    Parent = parentNode,
-                    IssueActivitiy = activity,
-
-                };
-
-                if (item.IssueActivityDetailInfos != null)
-                {
-                    if (item.IssueActivityDetailInfos.Count > 0)
-                        detail.IssueActivitiyDetails = GetIssueActivitiyDetailsWithoutId(activity, detail, item.IssueActivityDetailInfos);
-                }
-
-                details.Add(detail);
-            }
-
-            return details;
         }*/
-        private List<IssueActivitiyDetail> GetIssueActivitiyDetails(IssueActivitiy activity, IssueActivitiyDetail parentNode, List<IssueActivitiyDetail> nodes)
-        {
-            List<IssueActivitiyDetail> details = new List<IssueActivitiyDetail>();
-            foreach (var item in nodes)
-            {
-                var detail = new IssueActivitiyDetail
-                {
-                    LineNo = item.LineNo,
-                    Definition = item.Definition,
-                    RoleId = (byte)item.RoleId,
-                    Medium = item.Medium,
-                    Explanation = item.Explanation,
-                    //Parent = parentNode,
-                    //IssueActivitiy = activity,
-
-                };
-
-                if (item.IssueActivitiyDetails != null)
-                {
-                    if (item.IssueActivitiyDetails.Count > 0)
-                        detail.IssueActivitiyDetails = GetIssueActivitiyDetails(activity, detail, item.IssueActivitiyDetails);
-                }
-
-                details.Add(detail);
-            }
-
-            return details;
-        }
     }
 }

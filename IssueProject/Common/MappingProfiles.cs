@@ -10,10 +10,6 @@ using IssueProject.Models.IssueRelevantDepartMent;
 using IssueProject.Models.IssueRole;
 using IssueProject.Models.Precondition;
 using IssueProject.Models.Role;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace IssueProject.Common
 {

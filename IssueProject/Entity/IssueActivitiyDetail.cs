@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace IssueProject.Entity
 {
@@ -15,9 +14,7 @@ namespace IssueProject.Entity
         public int? ParentId { get; set; }
 
         public virtual IssueActivitiy IssueActivitiy { get; set; }
-
         public virtual List<IssueActivitiyDetail> IssueActivitiyDetails { get; set; }
-        
-      //  public virtual IssueActivitiyDetail Parent { get; set; }
+        public virtual IssueActivitiyDetail Parent { get; set; }
     }
 }

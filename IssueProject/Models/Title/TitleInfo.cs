@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Models.Title
+﻿namespace IssueProject.Models.Title
 {
     public class TitleInfo
     {

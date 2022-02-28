@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Serilog;
 using System;
 using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Serilog.Core;
+using Serilog.Debugging;
 
 namespace IssueProject
 {
@@ -12,33 +16,64 @@ namespace IssueProject
     {
         public static void Main(string[] args)
         {
-            IConfigurationRoot configuration = new ConfigurationBuilder()
-       .SetBasePath(Directory.GetCurrentDirectory())
-       .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-       .Build();
-            Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(configuration)
-                .CreateLogger();
             try
             {
-                Log.Information("Uygulama Baþladý.");
-                CreateWebHostBuilder(args).Build().Run();
+                CreateHostBuilder(args)
+                    .Build()
+                    .Run();
             }
-            catch (Exception ex)
+            catch (Exception vEx)
             {
-                Log.Fatal(ex, "Uygulama Doðru Bir Þekilde Baþlamadý.");
+                Log.Fatal(vEx, "Host terminated unexpectedly");
             }
             finally
             {
                 Log.CloseAndFlush();
             }
         }
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseStartup<Startup>()
-            .UseKestrel()
-            .UseSerilog()
-            .UseUrls(new[] { "http://*:5001" })
-            .UseIISIntegration();
+        private static IHostBuilder CreateHostBuilder(string[] args)
+        {
+            IConfiguration vBuiltConfig = new ConfigurationBuilder()
+                .AddJsonFile("HostSettings.json", false)
+                .Build();
+
+            SelfLog.Enable(msg => File.AppendAllText("C:\\Log\\Serilog.log", msg));
+
+            var vLoggingLevelSwitch = new LoggingLevelSwitch();
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.ControlledBy(vLoggingLevelSwitch)
+                .ReadFrom.Configuration(vBuiltConfig)
+                .CreateLogger();
+
+            return Host.CreateDefaultBuilder(args)
+                .ConfigureServices((context, services) =>
+                {
+                    services.AddSingleton(vLoggingLevelSwitch);
+                })
+                .ConfigureHostConfiguration(builder =>
+                {
+                    builder.AddConfiguration(vBuiltConfig);
+                })
+                .ConfigureAppConfiguration((hostingContext, config) =>
+                {
+
+                })
+                .ConfigureLogging((context, builder) =>
+                {
+                    builder.ClearProviders();
+                    builder.AddSerilog();
+                })
+                .ConfigureWebHostDefaults(builder =>
+                {
+                    builder
+                        .UseKestrel((context, options) =>
+                        {
+                            options.Limits.KeepAliveTimeout = TimeSpan.FromMinutes(5);
+                        })
+                        .UseIISIntegration()
+                        .UseStartup<Startup>()
+                        .UseSerilog();
+                });
+        }
     }
 }

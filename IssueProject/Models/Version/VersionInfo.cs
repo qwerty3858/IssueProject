@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace IssueProject.Models.Version
+﻿namespace IssueProject.Models.Version
 {
     public class VersionInfo
     {

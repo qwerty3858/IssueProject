@@ -1,11 +1,8 @@
 using EmailService;
 using Hangfire;
-using Hangfire.SqlServer;
 using IssueProject.Entity.Context;
 using IssueProject.Hangfire;
-using IssueProject.Hangfire.Interface;
 using IssueProject.Services;
-using Microsoft.AspNetCore.Authentication.Certificate;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
